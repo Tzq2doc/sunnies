@@ -1,2 +1,2 @@
 # Sunnies :sunglasses:
-Shapley values that Uncover Nonlinear Dependencies
+**S**hapley values that **u**ncover **n**onli**n**ear dependenc**ies**
