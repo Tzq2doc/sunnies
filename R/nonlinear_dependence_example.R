@@ -1,0 +1,22 @@
+# Helper
+cube_root <- Vectorize(function(x) {
+  if (x >= 0) {x^(1/3)}
+  else {-(-x)^(1/3)}
+})
+
+# X and Y are uncorrelated but dependent
+x <- seq(-1,1,by = 0.01) # runif(1e5, -1,1)
+y <- x^2
+cor(x,y)
+
+# The dependence is quadratic
+plot(x,y)
+
+# See that the pdf of XY ( = X^3) is symmetric, so E(XY) = 0 = E(X)E(Y)
+z <- seq(-1,1, by = 0.01)
+plot(z, 1/6*1/cube_root(z)^2)
+hist(x*y)
+hist(x)
+
+
+
