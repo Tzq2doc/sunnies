@@ -1,4 +1,4 @@
-source("Shapley_helpers.R")
+source("shapley_helpers.R")
 
 ######## TESTING CODE
 d <- 4

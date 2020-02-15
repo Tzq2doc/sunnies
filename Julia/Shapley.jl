@@ -9,12 +9,13 @@ using Random
 function shapley(Z; vals = 1:size(Z)[2]-1)
   d, n = size(Z)[2]-1, size(Z)[1]
 
+  ## This block is for R² ---------------------------------------
   # Equation (2) (taking care of 0-indexing)
   Cₙ_ = cor(Z)
   Cₙ(u) = [Cₙ_[i,j] for i in u .+ 1, j in u .+ 1]
-
   # Equation (4) (taking care of empty s here)
   R²(s) = (length(s) > 0) ? 1 - det(Cₙ(vcat(0,s)))/det(Cₙ(s)) : 0
+  ## ------------------------------------------------------------
 
   # Equation (9) (pre-compute ω_ for efficiency)
   ω_ = [factorial(i)/factorial(d, d-i-1) for i in 0:(d-1)]

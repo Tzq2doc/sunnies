@@ -1,9 +1,9 @@
 library(speedglm)
 library(Rfast)
 
-R2 <- function(y,X) {summary(speedlm(y~X))$r.squared}
-DC <- function(y,X){dcor(y,X)$dcor}
-BCDC <- function(y,X){bcdcor(y,X)}
+R2 <- function(y, X) {if (length(X) == 0) {0} else {summary(speedlm(y~X))$r.squared}}
+DC <- function(y, X){dcor(y,X)$dcor}
+BCDC <- function(y, X){bcdcor(y,X)}
 
 # This could definitely be faster
 shapley <- function(y, X, utility, ...) {
@@ -11,7 +11,7 @@ shapley <- function(y, X, utility, ...) {
   d <- ncol(X)
   
   count <- 0
-  R2 <- c()
+  U <- c()
   weights <- c()
   sign <- c()
   belong <- c()
@@ -24,20 +24,20 @@ shapley <- function(y, X, utility, ...) {
         weights[count] <- factorial(ii)*factorial(d-ii-1)/factorial(d)
         sign[count] <- 1
         belong[count] <- jj
-        R2[count] <- utility(y,X[,jj])
+        U[count] <- utility(y,X[,jj])
       } else {
         for (kk in 1:ncol(comb)) {
           count <- count + 1
           weights[count] <- factorial(ii)*factorial(d-ii-1)/factorial(d)
           sign[count] <- 1
           belong[count] <- jj
-          R2[count] <- utility(y,X[,c(jj,indep[comb[,kk]])])
+          U[count] <- utility(y,X[,c(jj,indep[comb[,kk]])])
           
           count <- count + 1
           weights[count] <- factorial(ii)*factorial(d-ii-1)/factorial(d)
           sign[count] <- -1
           belong[count] <- jj
-          R2[count] <- utility(y,X[,c(indep[comb[,kk]])])
+          U[count] <- utility(y,X[,c(indep[comb[,kk]])])
         }
       }
     }
@@ -45,7 +45,7 @@ shapley <- function(y, X, utility, ...) {
   
   shapley <- numeric(d)
   for (ii in 1:d) {
-    shapley[ii] <- sum(R2[which(belong==ii)]*weights[which(belong==ii)]*sign[which(belong==ii)])
+    shapley[ii] <- sum(U[which(belong==ii)]*weights[which(belong==ii)]*sign[which(belong==ii)])
   }
   
   shapley
