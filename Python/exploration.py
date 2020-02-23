@@ -22,3 +22,22 @@ y = x*x
 #
 
 #import simple_shapley from simple_shapley_helpers
+
+# For calculating the shapley value of player v
+value = 0
+for s in team_sizes: # These are all possible team sizes excluding v, i.e., (0,1,...,d-1)
+  value_s = 0
+  # <do> Create teams_of_size_s which stores all teams of size s (none of which include v)
+  for team in teams_of_size_s:
+    value_in_team = CF(y, X, append(v,team)) - CF(y, X, team) # <do> write CF
+    value_s += value_in_team
+  average_value_s = value_s/len(teams_of_size_s)
+  value += average_value_s
+average_value = value/len(team_sizes) # len(team_sizes) = d
+
+
+
+# You can also precalculate this for efficiency.
+# Writing the characteristic function CF:
+def CF(y, X, team):
+  # distance correlation between y and X

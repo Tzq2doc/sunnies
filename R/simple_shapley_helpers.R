@@ -32,9 +32,9 @@ estimate_characteristic_function <- function(X, utility, ...) {
   
   # We now precomputes all the
   # possible values of the utility function
-  for ( team_size in team_sizes ) {
-    teams <- combn( players, team_size, simplify = F )
-    for ( team in teams ) {
+  for ( s in team_sizes ) {
+    teams_of_size_s <- combn( players, s, simplify = F )
+    for ( team in teams_of_size_s ) {
       values[[string(team)]] <- utility(X[,team], ...) 
     }
   }
