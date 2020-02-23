@@ -13,8 +13,7 @@ cor(x,y)
 plot(x,y)
 
 # See that the pdf of XY ( = X^3) is symmetric, so E(XY) = 0 = E(X)E(Y)
-z <- seq(-1,1, by = 0.01)
-plot(z, 1/6*1/cube_root(z)^2)
+plot(x, 1/6*1/cube_root(x)^2)
 hist(x*y)
 hist(x)
 

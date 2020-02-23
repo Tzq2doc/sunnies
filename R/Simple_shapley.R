@@ -1,7 +1,8 @@
 source("shapley_helpers.R")
-source("simple_shapley_helpers.R")
+
 
 #### TEST IT OUT
+source("simple_shapley_helpers.R")
 d <- 4
 n <- 100
 X <- matrix(runif(n*d,-1,1),n,d)
@@ -9,6 +10,9 @@ y <- X^2 %*% (2*(0:(d-1)))
 
 CF <- estimate_characteristic_function(X, R2, y = y)
 v1 <- simple_shapley(CF, v = 1)
+
+
+
 
 
 

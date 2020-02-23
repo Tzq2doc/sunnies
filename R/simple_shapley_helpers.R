@@ -20,6 +20,7 @@ simple_shapley <- function(CF, v) {
   return(average_value)
 }
 
+
 # We don't know the population characteristic function,
 # so we use the utility function to estimate the 
 # characteristic function from the data X.
