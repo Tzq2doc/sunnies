@@ -21,13 +21,11 @@ X = numpy.array([[numpy.random.uniform(-1, 1) for x in range(d)]
                   for y in range(n)])
 e = numpy.random.normal(0, 1, n)
 y = numpy.matmul(numpy.multiply(X, X), 2*numpy.array(range(d))) + e
-print(y)
 
 # You can also precalculate this for efficiency.
 def CF(y, X, team):
     """Distance correlation between y and X """
     X = X[:, team]
-    #y = y[:, team]
     y = y[team]
     return dcor.distance_correlation(y,X)
 
