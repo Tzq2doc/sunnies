@@ -8,12 +8,19 @@ n <- 100
 X <- matrix(runif(n*d,-1,1),n,d)
 y <- X^2 %*% (2*(0:(d-1)))
 
-CF <- estimate_characteristic_function(X, R2, y = y)
-v1 <- simple_shapley(CF, v = 1)
+CF <- estimate_characteristic_function(X, DC, y = y)
+simple_shapley(CF, v = 1)
+shapley(y,X,DC)
 
+#### TEST WITH NON-RANDOM DATA
+d <- 4
+n <- 10
+X <- matrix(rep(seq(-1,1,length.out = n),d),n,d)
+y <- X^2 %*% (2*(0:(d-1)))
 
-
-
+CF <- estimate_characteristic_function(X, DC, y = y)
+simple_shapley(CF, v = 1)
+shapley(y,X,DC)
 
 
 ###### QUICK BENCHMARKING
