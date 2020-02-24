@@ -17,17 +17,18 @@ import sys
 
 n = 10
 d = 4
-X = numpy.array([[numpy.random.uniform(-1, 1) for x in range(d+1)]
+X = numpy.array([[numpy.random.uniform(-1, 1) for x in range(d)]
                   for y in range(n)])
-#y = X * (2*(0:(d-1))) + rnorm(n)
-e = numpy.random.uniform(-1, 1, n).reshape(n, 1) # Check this!
-y = numpy.multiply(X, X) * 2*numpy.array(range(d+1)) + e # Square X at some point
+e = numpy.random.normal(0, 1, n)
+y = numpy.matmul(numpy.multiply(X, X), 2*numpy.array(range(d))) + e
+print(y)
 
 # You can also precalculate this for efficiency.
 def CF(y, X, team):
     """Distance correlation between y and X """
     X = X[:, team]
-    y = y[:, team]
+    #y = y[:, team]
+    y = y[team]
     return dcor.distance_correlation(y,X)
 
 def calc_shap(players, v):
