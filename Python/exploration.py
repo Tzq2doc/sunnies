@@ -15,13 +15,13 @@ import sys
 #    a1, a2, a3, a4 = 0, 1, 3, 4
 #    return a1*x1*x1 + a2*2*x2 + a3*x3*x3 + a4*x4*x4
 
-n=10
-d=4
+n = 10
+d = 4
 X = numpy.array([[numpy.random.uniform(-1, 1) for x in range(d+1)]
                   for y in range(n)])
 #y = X * (2*(0:(d-1))) + rnorm(n)
 e = numpy.random.uniform(-1, 1, n).reshape(n, 1) # Check this!
-y = X * 2*numpy.array(range(d+1)) + e # Square X at some point
+y = numpy.multiply(X, X) * 2*numpy.array(range(d+1)) + e # Square X at some point
 
 # You can also precalculate this for efficiency.
 def CF(y, X, team):
