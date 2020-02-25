@@ -1,3 +1,4 @@
+############ NONLINEAR DEPENDENCE EXAMPLE
 # Helper
 cube_root <- Vectorize(function(x) {
   if (x >= 0) {x^(1/3)}
@@ -18,4 +19,12 @@ hist(x*y)
 hist(x)
 
 
+############ DISTANCE CORRELATION NOT MONOTONE IN NUMBER OF PLAYERS EXAMPLES
+n <- 200
+x1 <- rnorm(n)
+x2 <- rnorm(n)
+y <- x1
+Rfast::dcor(y, cbind(x1,x2))$dcor
+Rfast::dcor(y, cbind(x1))$dcor
+shapley(y, cbind(x1,x2), utility = DC)
 
