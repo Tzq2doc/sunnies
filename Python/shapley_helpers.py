@@ -7,12 +7,20 @@ pip install dcor (from pypi.org/project/dcor/)
 from itertools import combinations
 import dcor
 
-def CF(x, y, team):
-    """Distance correlation between y and x """
+def CF(x, y, team, cf_name="dcor"):
+    """
+    Available characteristic functions:
+        dcor: Distance correlation between y and x
+    """
     x = x[:, team]
-    return dcor.distance_correlation(y, x)
 
-def make_cf_dict(x, y, players):
+    if cf_name is "dcor":
+        return dcor.distance_correlation(y, x)
+    else:
+        raise NameError("I don't know the characteristic function {0}".format(cf_name))
+        return 0
+
+def make_cf_dict(x, y, players, cf_name="dcor"):
     """
     Creates dictionary with values of the characteristic function for each
     combination of the players.
@@ -25,7 +33,7 @@ def make_cf_dict(x, y, players):
         value_s = 0
         teams_of_size_s = list(combinations(players, _size)) #NB: returns tuples
         for _team in teams_of_size_s:
-            cf_dict[_team] = CF(x, y, _team)
+            cf_dict[_team] = CF(x, y, _team, cf_name)
 
     return cf_dict
 

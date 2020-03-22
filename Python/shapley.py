@@ -22,6 +22,7 @@ if __name__ == "__main__":
     V = 2
 
     PLAYERS = list(range(D))
-    CF_DICT = sh.make_cf_dict(X, Y, PLAYERS)
+    CF_DICT = sh.make_cf_dict(X, Y, PLAYERS, cf_name="dcor")
+    #CF_DICT = sh.make_cf_dict(X, Y, PLAYERS, cf_name="hilbert_schmidt")
     print(sh.calc_shap(X, Y, V, CF_DICT))
 
