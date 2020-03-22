@@ -1,18 +1,14 @@
 """
-Shapley values with various model-agnostic measures of dependence as
-utility functions.
+Helper functions for shalpey.py
 Package dependencies:
 pip install dcor (from pypi.org/project/dcor/)
-
-
 """
-import numpy
+
 from itertools import combinations
 import dcor
-import sys
 
 def CF(x, y, team):
-    """Distance correlation between y and X """
+    """Distance correlation between y and x """
     x = x[:, team]
     return dcor.distance_correlation(y, x)
 
@@ -36,9 +32,9 @@ def make_cf_dict(x, y, players):
 def calc_shap(x, y, v, cf_dict):
     """
     Calculate the Shapley value for player indexed v,
-    given X (todo explain) and the caracteristic function cf (todo explain)
+    given x (todo explain) and the caracteristic function cf (todo explain)
     """
-    players = list(range(X.shape[1]))
+    players = list(range(x.shape[1]))
 
     if v in players:
         players.remove(v)
@@ -59,19 +55,4 @@ def calc_shap(x, y, v, cf_dict):
         value += average_value_s
     average_value = value/len(team_sizes)
     return average_value
-
-if __name__ == "__main__":
-    N = 10
-    D = 5
-
-    #X = numpy.array([[numpy.random.uniform(-1, 1) for _ in range(D)]
-    #                  for y in range(N)])
-    X = numpy.array([numpy.linspace(-1, 1, N) for _ in range(D)]).T
-    #ERROR = numpy.random.normal(0, 1, N)
-    Y = numpy.matmul(numpy.multiply(X, X), 2*numpy.array(range(D)))# + e
-    V = 2
-
-    PLAYERS = list(range(D))
-    CF_DICT = make_cf_dict(X, Y, PLAYERS)
-    print(calc_shap(X, Y, V, CF_DICT))
 
