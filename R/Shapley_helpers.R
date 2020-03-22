@@ -1,52 +1,50 @@
-library(speedglm)
-library(Rfast)
+# The Shapley value of a player can be broken into
+# the mean of the average utility of that player
+# within each team size.
+shapley <- function(CF, v) {
+  players <- environment(CF)$players[-v]
+  num_players <- length(players)
+  team_sizes <- 0:num_players
+  value <- 0
+  for ( s in team_sizes ) {
+    value_s <- 0
+    teams_of_size_s <- combn(players, s, simplify = F)
+    for ( team in teams_of_size_s ) {
+      value_in_team <- CF(c(v,team)) - CF(team)
+      value_s <- value_s + value_in_team
+    }
+    average_value_s <- value_s/length(teams_of_size_s)
+    value <- value + average_value_s
+  }
+  average_value <- value/length(team_sizes)
+  return(average_value)
+}
 
-R2 <- function(y, X) {if (length(X) == 0) {0} else {summary(speedlm(y~X))$r.squared}}
-DC <- function(y, X){if (length(X) == 0) {0} else {dcor(y,X)$dcor}}
-BCDC <- function(y, X){if (length(X) == 0) {0} else {bcdcor(y,X)}}
 
-# This could definitely be faster
-shapley <- function(y, X, utility, ...) {
-  n <- nrow(X)
-  d <- ncol(X)
+# We don't know the population characteristic function,
+# so we use the utility function to estimate the 
+# characteristic function from the data X.
+estimate_characteristic_function <- function(X, utility, ...) {
+  values <- list()
+  players <- 1:ncol(X)
+  num_players <- length(players)
+  team_sizes <- 0:num_players
   
-  count <- 0
-  U <- c()
-  weights <- c()
-  sign <- c()
-  belong <- c()
-  for (ii in 0:(d-1)) {
-    comb <- combn(d-1,ii)
-    for (jj in 1:d) {
-      indep <- (1:d)[-jj]
-      if (ii == 0) {
-        count <- count + 1
-        weights[count] <- factorial(ii)*factorial(d-ii-1)/factorial(d)
-        sign[count] <- 1
-        belong[count] <- jj
-        U[count] <- utility(y,X[,jj])
-      } else {
-        for (kk in 1:ncol(comb)) {
-          count <- count + 1
-          weights[count] <- factorial(ii)*factorial(d-ii-1)/factorial(d)
-          sign[count] <- 1
-          belong[count] <- jj
-          U[count] <- utility(y,X[,c(jj,indep[comb[,kk]])])
-          
-          count <- count + 1
-          weights[count] <- factorial(ii)*factorial(d-ii-1)/factorial(d)
-          sign[count] <- -1
-          belong[count] <- jj
-          U[count] <- utility(y,X[,c(indep[comb[,kk]])])
-        }
-      }
+  # We now precompute all the
+  # possible values of the utility function
+  for ( s in team_sizes ) {
+    teams_of_size_s <- combn( players, s, simplify = F )
+    for ( team in teams_of_size_s ) {
+      values[[string(team)]] <- utility(X[,team], ...) 
     }
   }
-  
-  shapley <- numeric(d)
-  for (ii in 1:d) {
-    shapley[ii] <- sum(U[which(belong==ii)]*weights[which(belong==ii)]*sign[which(belong==ii)])
-  }
-  
-  shapley
+  # We created some bindings in this environment 
+  # and we are now returning a function that 
+  # permantently has access to this environment,
+  # so we can access this environment from anywhere
+  return(function(t){values[[string(t)]]})
 }
+
+# This function converts teams into strings so we can look
+# them up in the characteristic function, a bit like a dictionary.
+string <- function(team) {paste0("-", sort(team), collapse = "")}
