@@ -28,24 +28,36 @@ def CF(y, X, team):
 
 def calc_shap(X, v, CF):
     """
-    Calculate the Shapley value for v given a list of players in the game
+    Calculate the Shapley value for player indexed v,
+    given X (todo explain) and the caracteristic function CF (todo explain)
     """
-    # todo: assert only unique values via set(players)
+    # If list of players given as input:
+    #todo assert only unique values via set(players)
+    #assert isinstance(players, list)
+
     players = list(range(X.shape[1]))
-    assert isinstance(players, list)
+
     if v in players:
         players.remove(v)
 
     num_players = len(players)
     team_sizes = list(range(num_players+1))
     value = 0
-    vt = (v,)
+    v_tuple = (v,)
+
+    # TODO -------------------------------------------------
+    #for all unique team combinations
+
+    #value_in_team = CF(y, X, _team + v_tuple) - CF(y, X, _team)
+    # CF dict
+    # ------------------------------------------------------
 
     for _size in team_sizes:
         value_s = 0
         teams_of_size_s = list(combinations(players, _size)) #NB: returns tuples
         for _team in teams_of_size_s:
-            value_in_team = CF(y, X, _team + vt) - CF(y, X, _team)
+            #value_in_team = CF(y, X, _team + v_tuple) - CF(y, X, _team)
+            value_in_team = cf_dict[_team]
             value_s += value_in_team
         average_value_s = value_s/len(teams_of_size_s)
         value += average_value_s
