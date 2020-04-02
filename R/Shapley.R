@@ -2,6 +2,18 @@ source("old/old_shapley_helpers.R")
 source("utility_functions.R")
 source("shapley_helpers.R")
 
+#### TEST with HSIC
+d <- 4
+n <- 100
+X <- matrix(runif(n*d,-1,1),n,d)
+y <- X^2 %*% (2*(0:(d-1)))
+
+sqrtm(solve(cov(X)))
+sqrtm(solve(cov(y)))
+
+CF <- estimate_characteristic_function(X, HSIC, y = y)
+for (i in 1:4) { print(shapley(CF, v = i)) }
+
 #### TEST IT OUT VERSUS THE OLD VERSION
 d <- 4
 n <- 100
