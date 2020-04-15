@@ -20,6 +20,8 @@ shapley <- function(CF, v) {
   return(average_value)
 }
 
+shapley_ <- Vectorize(shapley, "v")
+
 
 # We don't know the population characteristic function,
 # so we use the utility function to estimate the 
@@ -35,7 +37,7 @@ estimate_characteristic_function <- function(X, utility, ...) {
   for ( s in team_sizes ) {
     teams_of_size_s <- combn( players, s, simplify = F )
     for ( team in teams_of_size_s ) {
-      values[[string(team)]] <- utility(X[,team], ...) 
+      values[[string(team)]] <- utility(X[,team,drop = F], ...) 
     }
   }
   # We created some bindings in this environment 
