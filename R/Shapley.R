@@ -21,11 +21,8 @@ for ( i in 1:length(utilities) ) {
   results[i,] <- shapley_(CF_i, 1:d)
 }
 
-results
-
-X11()
-par(mfrow = c(2,3))
-for (i in 1:5) {barplot(results[i,], main = utilities[i])}
+barplot(results[1,])
+barplot(results[2,])
 
 
 #### TEST with HSIC
@@ -50,7 +47,7 @@ for (i in 1:4) { print(shapley(CF, v = i)) }
 old_shapley(y,X,DC)
 
 #### TEST WITH NON-RANDOM DATA
-d <- 4
+d <- 5
 n <- 10
 X <- matrix(rep(seq(-1,1,length.out = n),d),n,d)
 y <- X^2 %*% (2*(0:(d-1)))
