@@ -2,6 +2,26 @@ source("old/old_shapley_helpers.R")
 source("utility_functions.R")
 source("shapley_helpers.R")
 
+### Parameter names
+n = 1000  # n: sample size
+d = 4     # d: number of features
+N = 1000  # N: number of iterations simulating data
+
+
+#### Compare them all * 1000
+results <- list()
+utilities <- c("R2","DC","BCDC","AIDC","HSIC")
+for (i in 1:length(utilities)) {
+  results[[utilities[i]]] <- shapleyN(get(utilities[i]), N, n , d)
+}
+saveRDS(results, "results/compare_them_all_1000.Rds")
+
+res_means <- lapply(results, function(r) {apply(r, FUN = mean, MARGIN = 2)})
+for (u in utilities) { barplot(res_means[[u]], main = u) }
+
+
+
+
 #### Compare them all
 d <- 4
 n <- 100
@@ -72,3 +92,4 @@ microbenchmark::microbenchmark(
   old_shapley(y,X, R2),
   shapley2(y, X)
 )
+
