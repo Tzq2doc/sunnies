@@ -10,7 +10,7 @@ import dcor
 import numpy
 import scipy
 
-def aidc(X, Y):
+def AIDC(X, Y):
     cov_y = numpy.cov(Y)
     cov_x = numpy.cov(X.T)
 
@@ -47,7 +47,7 @@ def CF(x, y, team, cf_name):
         return (1 - det_C_xy/det_C_x)
 
     elif cf_name is "aidc":
-        return aidc(x, y)
+        return AIDC(x, y)
 
     else:
         raise NameError("I don't know the characteristic function {0}".format(cf_name))
