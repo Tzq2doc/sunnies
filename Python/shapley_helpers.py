@@ -23,9 +23,12 @@ def CF(x, y, team, cf_name):
         return dcor.distance_correlation(y, x)
 
     elif cf_name is "r2":
-        correlation_matrix = numpy.corrcoef(x.T, y)
-        correlation_xy = correlation_matrix[0, 1]
-        return correlation_xy**2
+        det_C_xy = numpy.linalg.det(numpy.corrcoef(x.T, y))
+        if len(team) == 1:
+            det_C_x = 1
+        else:
+            det_C_x = numpy.linalg.det(numpy.corrcoef(x.T))
+        return (1 - det_C_xy/det_C_x)
     else:
         raise NameError("I don't know the characteristic function {0}".format(cf_name))
         return 0

@@ -26,7 +26,7 @@ if __name__ == "__main__":
     N_SAMPLES = 100
     N_FEATS = 5
 
-    N_ITER = 1000
+    N_ITER = 100
     ALL_SHAPS = []
     PLAYERS = list(range(N_FEATS))
 
