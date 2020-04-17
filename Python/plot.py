@@ -13,9 +13,11 @@ TWO_D = 2*numpy.array(range(D))
 
 Y = numpy.matmul(numpy.multiply(X, X), TWO_D)
 
-correlation_matrix = numpy.corrcoef(X.T, Y)
-correlation_xy = correlation_matrix[0,1]
-print(correlation_xy**2)
+det_C_xy = numpy.linalg.det(numpy.corrcoef(X.T, Y))
+det_C_x = numpy.linalg.det(numpy.corrcoef(X.T))
+R2 = 1 - det_C_xy/det_C_x
+print(R2)
+
 
 sys.exit()
 
