@@ -2,6 +2,26 @@ source("old/old_shapley_helpers.R")
 source("utility_functions.R")
 source("shapley_helpers.R")
 
+### Parameter names
+n = 1000  # n: sample size
+d = 4     # d: number of features
+N = 1000  # N: number of iterations simulating data
+
+
+#### Compare them all * 1000
+results <- list()
+utilities <- c("R2","DC","BCDC","AIDC","HSIC")
+for (i in 1:length(utilities)) {
+  results[[utilities[i]]] <- shapleyN(get(utilities[i]), N, n , d)
+}
+saveRDS(results, "results/compare_them_all_1000.Rds")
+
+res_means <- lapply(results, function(r) {apply(r, FUN = mean, MARGIN = 2)})
+for (u in utilities) { barplot(res_means[[u]], main = u) }
+
+
+
+
 #### Compare them all
 d <- 4
 n <- 100
@@ -21,11 +41,8 @@ for ( i in 1:length(utilities) ) {
   results[i,] <- shapley_(CF_i, 1:d)
 }
 
-results
-
-X11()
-par(mfrow = c(2,3))
-for (i in 1:5) {barplot(results[i,], main = utilities[i])}
+barplot(results[1,])
+barplot(results[2,])
 
 
 #### TEST with HSIC
@@ -50,7 +67,7 @@ for (i in 1:4) { print(shapley(CF, v = i)) }
 old_shapley(y,X,DC)
 
 #### TEST WITH NON-RANDOM DATA
-d <- 4
+d <- 5
 n <- 10
 X <- matrix(rep(seq(-1,1,length.out = n),d),n,d)
 y <- X^2 %*% (2*(0:(d-1)))
@@ -75,3 +92,4 @@ microbenchmark::microbenchmark(
   old_shapley(y,X, R2),
   shapley2(y, X)
 )
+

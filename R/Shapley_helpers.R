@@ -1,3 +1,22 @@
+
+### shapleyN calls the shapley function for many
+# iterations of simulated data
+## Parameter names
+# n: sample size
+# d: number of features
+# N: number of iterations simulating data
+shapleyN <- function(utility, N, n, d) {
+  results <- matrix(0, nrow = N, ncol = d)
+  for ( i in 1:N ) {
+    X <- matrix(runif(n*d,-1,1), n, d)
+    y <- X^2 %*% (2*(0:(d-1)))
+    CF_i <- estimate_characteristic_function(X, utility, y = y)
+    results[i,] <- shapley_(CF_i, 1:d)
+  }
+  results
+}
+
+
 # The Shapley value of a player can be broken into
 # the mean of the average utility of that player
 # within each team size.

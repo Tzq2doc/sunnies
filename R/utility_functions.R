@@ -15,7 +15,3 @@ AIDC <- function(y,X){if (length(X) == 0) {0} else {
 }
 # Hilbert Schmidt Independence Criterion
 HSIC <- function(y,X){if (length(X) == 0) {0} else {dhsic(X,y)$dHSIC}}
-
-
-
-dcor(y %*% sqrtm(solve(cov(y))), X %*% sqrtm(solve(cov(X, drop = F))))$dcor
