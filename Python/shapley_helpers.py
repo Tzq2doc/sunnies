@@ -4,23 +4,33 @@ Package dependencies:
 pip install dcor (from pypi.org/project/dcor/)
 """
 
+import sys
 from itertools import combinations
 import dcor
+import numpy
 
-def CF(x, y, team, cf_name="dcor"):
+def CF(x, y, team, cf_name):
     """
     Available characteristic functions:
         dcor: Distance correlation between y and x
     """
     x = x[:, team]
 
+    if len(team)==0:
+        return 0.0
+
     if cf_name is "dcor":
         return dcor.distance_correlation(y, x)
+
+    elif cf_name is "r2":
+        correlation_matrix = numpy.corrcoef(x.T, y)
+        correlation_xy = correlation_matrix[0, 1]
+        return correlation_xy**2
     else:
         raise NameError("I don't know the characteristic function {0}".format(cf_name))
         return 0
 
-def make_cf_dict(x, y, players, cf_name="dcor"):
+def make_cf_dict(x, y, players, cf_name):
     """
     Creates dictionary with values of the characteristic function for each
     combination of the players.
@@ -58,6 +68,8 @@ def calc_shap(x, y, v, cf_dict):
         for _team in teams_of_size_s:
             #value_in_team = cf(x, y, _team + v_tuple) - cf(x, y, _team)
             value_in_team = (cf_dict[tuple(sorted(_team+v_tuple))] - cf_dict[_team])
+            #this sometimes gets negative when using cf=r^2
+            #print(value_in_team)
             value_s += value_in_team
         average_value_s = value_s/len(teams_of_size_s)
         value += average_value_s
