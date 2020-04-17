@@ -21,7 +21,8 @@ def calc_shapley_values(x, y, players, cf_name="dcor"):
 if __name__ == "__main__":
 
     #CF_NAME = "dcor"
-    CF_NAME = "r2"
+    #CF_NAME = "r2"
+    CF_NAME = "aidc"
 
     N_SAMPLES = 100
     N_FEATS = 5
