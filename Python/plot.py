@@ -14,6 +14,7 @@ Y = numpy.matmul(numpy.multiply(X, X), TWO_D)
 # ---
 
 
+
 # -- Plot
 plt.scatter(X[:,0], Y, label="X0", alpha=0.8)
 plt.scatter(X[:,1], Y, label="X1", alpha=0.8)
