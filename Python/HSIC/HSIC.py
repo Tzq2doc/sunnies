@@ -6,7 +6,7 @@ def centering(K):
     unit = np.ones([n, n])
     I = np.eye(n)
     Q = I - unit/n
-    
+
     return np.dot(np.dot(Q, K), Q)
 
 def rbf(X, sigma=None):
@@ -25,5 +25,5 @@ def HSIC(X, Y):
 if __name__ == '__main__':
     X = np.random.randn(10, 5)
     Y = np.random.randn(10, 5)
-    print HSIC(X, Y)
-    print HSIC(X, X)
+    print(HSIC(X, Y))
+    print(HSIC(X, X))
