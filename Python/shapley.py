@@ -20,13 +20,14 @@ def calc_shapley_values(x, y, players, cf_name="dcor"):
 
 if __name__ == "__main__":
 
-    #CF_NAME = "dcor"
-    CF_NAME = "r2"
+    CF_NAME = "dcor"
+    #CF_NAME = "r2"
+    #CF_NAME = "aidc"
 
     N_SAMPLES = 100
     N_FEATS = 5
 
-    N_ITER = 100
+    N_ITER = 1000
     ALL_SHAPS = []
     PLAYERS = list(range(N_FEATS))
 
@@ -53,10 +54,10 @@ if __name__ == "__main__":
     ax.xaxis.grid(False)
 
     #plt.title("Distance correlation")
-    plt.title(r"$R^2$")
-    plt.bar(PLAYERS, SHAPS_AVG)
+    #plt.title(r"$R^2$")
+    #plt.xlabel("Player index")
+    #plt.ylabel("Avg Shapley value")
     #plt.ylim([0,0.005])
-    plt.xlabel("Player index")
-    plt.ylabel("Avg Shapley value")
+    plt.bar(PLAYERS, SHAPS_AVG)
     plt.show()
 

@@ -8,6 +8,22 @@ import sys
 from itertools import combinations
 import dcor
 import numpy
+import scipy
+
+def AIDC(X, Y):
+    cov_y = numpy.cov(Y)
+    cov_x = numpy.cov(X.T)
+
+    if cov_x.shape is ():
+        inv_cov_x = 1.0/cov_x
+        X_trans = numpy.dot(X, numpy.sqrt(inv_cov_x))
+    else:
+        inv_cov_x = numpy.linalg.inv(cov_x)
+        X_trans = numpy.dot(X, scipy.linalg.sqrtm(inv_cov_x))
+
+    inv_cov_y = 1/cov_y
+    Y_trans = numpy.dot(Y, numpy.sqrt(inv_cov_y))
+    return dcor.distance_correlation(Y_trans, X_trans)
 
 def CF(x, y, team, cf_name):
     """
@@ -24,11 +40,16 @@ def CF(x, y, team, cf_name):
 
     elif cf_name is "r2":
         det_C_xy = numpy.linalg.det(numpy.corrcoef(x.T, y))
-        if len(team) == 1:
+        if len(team)==1:
             det_C_x = 1
         else:
             det_C_x = numpy.linalg.det(numpy.corrcoef(x.T))
         return (1 - det_C_xy/det_C_x)
+
+    elif cf_name is "aidc":
+        return dcor.distance_correlation_af_inv(y, x)
+        #return AIDC(x, y)
+
     else:
         raise NameError("I don't know the characteristic function {0}".format(cf_name))
         return 0
