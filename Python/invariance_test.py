@@ -22,12 +22,28 @@ N = numpy.array([numpy.random.uniform(-10, 10, N) for _ in range(D)]).T
 X_TRANS1 = numpy.matmul(X, M)
 X_TRANS2 = numpy.matmul(X, M) + N
 
+print("Distance correlation:")
+print(dcor.distance_correlation(Y, X))
+print("Unbiased dcor:")
+print(numpy.sqrt(dcor.u_distance_correlation_sqr(Y, X)))
+sys.exit()
+
+#for _ in range(10000):
+#    AIDC(X, Y)
+#    dcor.distance_correlation_af_inv(Y, X)
+#print("done")
+#sys.exit()
+
 print("AIDC original X:")
 print(AIDC(X, Y))
+print("AIDC built-in X:")
+print(dcor.distance_correlation_af_inv(Y, X))
 print("AIDC X = M*X:")
 print(AIDC(X_TRANS1, Y))
+print(dcor.distance_correlation_af_inv(Y, X_TRANS1))
 print("AIDC X = M*X + N:")
 print(AIDC(X_TRANS2, Y))
+print(dcor.distance_correlation_af_inv(Y, X_TRANS2))
 
 # AIDC
 #cov_y = numpy.cov(Y)

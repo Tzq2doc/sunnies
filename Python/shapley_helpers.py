@@ -47,7 +47,8 @@ def CF(x, y, team, cf_name):
         return (1 - det_C_xy/det_C_x)
 
     elif cf_name is "aidc":
-        return AIDC(x, y)
+        return dcor.distance_correlation_af_inv(y, x)
+        #return AIDC(x, y)
 
     else:
         raise NameError("I don't know the characteristic function {0}".format(cf_name))
