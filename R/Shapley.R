@@ -84,6 +84,23 @@ for (j in 1:d) {
 
 dHSIC:::gaussian_grammat_rcpp(X[[1]], bandwidth[1], len, ncol(X[[1]]))
 
+term1 <- 1
+term2 <- 1
+term3 <- 2/len
+for (j in 1:d) {
+  term1 <- term1 * K[[j]]
+  term2 <- 1/len^2 * term2 * sum(K[[j]])
+  term3 <- 1/len * term3 * colSums(K[[j]])
+}
+term1 <- sum(term1)
+term3 <- sum(term3)
+dHSIC = 1/len^2 * term1 + term2 - term3
+
+Xt <- X
+
+dHSIC::dhsic(list(X,y))$dHSIC
+dHSIC::dhsic(X,y)$dHSIC
+
 
 ###### QUICK BENCHMARKING
 shapley2 <- function(y, X) {
