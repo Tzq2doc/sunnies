@@ -103,7 +103,7 @@ def HSIC(x, y):
     Calculate the HSIC estimator for d=2, as in [1] eq (9)
     """
     n = x.shape[0]
-    return numpy.trace(numpy.matmul(centering(gaussian_grammat(x)),centering(gaussian_grammat(Y))))/n/n
+    return numpy.trace(numpy.matmul(centering(gaussian_grammat(x)),centering(gaussian_grammat(y))))/n/n
 
 def dHSIC(*argv):
     assert len(argv) > 1, "dHSIC requires at least two arguments"

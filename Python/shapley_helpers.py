@@ -9,6 +9,7 @@ from itertools import combinations
 import dcor
 import numpy
 import scipy
+from HSIC import dHSIC
 
 def AIDC(X, Y):
     cov_y = numpy.cov(Y)
@@ -49,6 +50,9 @@ def CF(x, y, team, cf_name):
     elif cf_name is "aidc":
         return dcor.distance_correlation_af_inv(y, x)
         #return AIDC(x, y)
+
+    elif cf_name is "hsic":
+        return dHSIC(x, y)
 
     else:
         raise NameError("I don't know the characteristic function {0}".format(cf_name))
