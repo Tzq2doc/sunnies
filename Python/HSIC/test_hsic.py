@@ -37,7 +37,11 @@ def rbf(x, sigma=None):
     return KX
 
 def japanese_bw(x):
-    n = x.shape[0]
+    try:
+        x.shape[1]
+    except IndexError:
+        n = x.shape[0]
+        x = x.reshape(n, 1)
     GX = numpy.dot(x, x.T)
     KX = numpy.diag(GX) - GX + (numpy.diag(GX) - GX).T
     mdist = numpy.median(KX[KX != 0])
@@ -153,8 +157,8 @@ if __name__ == "__main__":
     # ---
 
     # --- Test bandwidth calculations:
-    #print(cpp_bw(X))
-    #print(japanese_bw(X))
+    print(cpp_bw(X))
+    print(japanese_bw(X))
     #sys.exit()
 
     # --- Test rbf = cpp_K
