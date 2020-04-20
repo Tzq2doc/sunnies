@@ -20,7 +20,12 @@ def centering(K):
     return numpy.matmul(K, Q)
 
 def rbf(x, sigma=None):
-    N = x.shape[0]
+    try:
+        x.shape[1]
+    except IndexError:
+        n = x.shape[0]
+        x = x.reshape(n, 1)
+
     GX = numpy.dot(x, x.T)
     KX = numpy.diag(GX) - GX + (numpy.diag(GX) - GX).T
     if sigma is None:
@@ -116,25 +121,24 @@ def cpp_K(x, bw=None):
     return K
 
 def r_dhsic(K):
-  """
-  starts at line 112 in
-  https://github.com/cran/dHSIC/blob/master/R/dhsic.R
-  # Compute dHSIC
-  """
-  length, d =K.shape #TODO: check that K is always NxN
-  term1 = 1
-  term2 = 1
-  term3 = 2/length
-  #for j in range(0, d):
-  # Daniel: This is what needs to become python:
-  #  term1 <- term1*K[[j]]
-  #  term2 <- 1/len^2*term2*sum(K[[j]])
-  #  term3 <- 1/len*term3*colSums(K[[j]])
-  #
-  term1 = sum(term1)
-  term3 = sum(term3)
-  dHSIC = 1/length**2*term1+term2-term3
-  return dHSIC
+    """
+    starts at line 112 in
+    https://github.com/cran/dHSIC/blob/master/R/dhsic.R
+    # Compute dHSIC
+    """
+    length, d = K.shape #TODO: check that K is always NxN
+    term1 = 1
+    term2 = 1
+    term3 = 2/length
+    for j in range(0, d):
+        Kj = cpp_K(X[:,j])
+        term1 = term1*Kj
+        term2 = 1/length/length*numpy.sum(Kj)
+        #term3 <- 1/len*term3*colSums(K[[j]])
+        term1 = sum(term1)
+        #term3 = sum(term3)
+        dHSIC = 1/length**2*term1+term2#-term3
+    return dHSIC
 
 
 if __name__ == "__main__":
@@ -144,28 +148,22 @@ if __name__ == "__main__":
 
     #X = numpy.array([numpy.linspace(-1, 1, N) for _ in range(D)]).T
     X = numpy.array([numpy.random.uniform(-1, 1, N) for _ in range(D)]).T
-
-    print(X[:,1].shape)
-    #print(numpy.multiply(cpp_K(X[:,0]), cpp_K(X[:,1])))
-    print(cpp_K(X))
-    print(cpp_K(X[:,0]))
-    print(cpp_K(X[:,1]))
-    sys.exit()
+    TWO_D = 2*numpy.array(range(D))
+    Y = numpy.matmul(numpy.multiply(X, X), TWO_D)
+    # ---
 
     # --- Test bandwidth calculations:
-    print(cpp_bw(X))
-    print(japanese_bw(X))
+    #print(cpp_bw(X))
+    #print(japanese_bw(X))
     #sys.exit()
 
-    # --- Test xnorm = rbf
-    print(cpp_K(X, bw=1).round(decimals=2) == rbf(X, sigma=1).round(decimals=2))
+    # --- Test rbf = cpp_K
+    #print(cpp_K(Y, bw=1).round(decimals=2) == rbf(Y, sigma=1).round(decimals=2))
     print(cpp_K(X).round(decimals=2) == rbf(X).round(decimals=2))
-    K = cpp_K(X)
+    print(cpp_K(Y).round(decimals=2) == rbf(Y).round(decimals=2))
+    #print(cpp_K(X, bw=1).round(decimals=2) == rbf(X, sigma=1).round(decimals=2))
     sys.exit()
 
-    #TWO_D = 2*numpy.array(range(D))
-    #Y = numpy.matmul(numpy.multiply(X, X), TWO_D)
-    ## ---
     #Y = numpy.reshape(Y, (N,1))
 
     #print(HSIC(X, Y))
