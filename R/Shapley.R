@@ -32,6 +32,7 @@ barplot(results[2,])
 #### TEST with HSIC
 d <- 4
 n <- 100
+set.seed(0)
 X <- matrix(runif(n*d,-1,1), n, d)
 y <- X^2 %*% (2*(0:(d-1)))
 
@@ -51,66 +52,25 @@ for (i in 1:4) { print(shapley(CF, v = i)) }
 old_shapley(y,X,DC)
 
 #### TEST WITH NON-RANDOM DATA
-d <- 2
-n <- 5
-X <- matrix(rep(seq(-1,1,length.out = n),d),n,d)
+d <- 4
+n <- 100
+#X <- matrix(rep(seq(-1,1,length.out = n),d),n,d)
+X <- matrix(seq(-1,1,length.out = n*d),n,d)
 y <- X^2 %*% (2*(0:(d-1)))
 
 HSIC(X,y)
+AIDC(y,X)
 
 CF <- estimate_characteristic_function(X, DC, y = y)
 shapley(CF, v = 1)
 old_shapley(y,X,DC)
 
-
-dhsic
-dHSIC:::gaussian_grammat_rcpp()
-
-
-median_bandwidth <- function(x) {
-  bandwidth <- dHSIC:::median_bandwidth_rcpp(x[sample(1:len), 
-                                            , drop = FALSE], len, ncol(x))
-  if (bandwidth == 0) {
-    bandwidth <- 0.001
-  }
-  return(bandwidth)
-}
-
-for (j in 1:d) {
-  bandwidth[j] <- median_bandwidth(X[[j]])
-  K[[j]] <- dHSIC:::gaussian_grammat_rcpp(X[[j]], bandwidth[j], 
-                                          len, ncol(X[[j]]))
-}
-
-dHSIC:::gaussian_grammat_rcpp(X[[1]], bandwidth[1], len, ncol(X[[1]]))
-
-term1 <- 1
-term2 <- 1
-term3 <- 2/len
-for (j in 1:d) {
-  term1 <- term1 * K[[j]]
-  term2 <- 1/len^2 * term2 * sum(K[[j]])
-  term3 <- 1/len * term3 * colSums(K[[j]])
-}
-term1 <- sum(term1)
-term3 <- sum(term3)
-dHSIC = 1/len^2 * term1 + term2 - term3
-dHSIC
-
-Xt <- X
-
-k <- K[[1]]; l <- K[[2]]
-
+# See equation (4) of paper [27] 
 dterm1 <- sum(diag(k %*% l))
 dterm2 <- 1/(len^4)*sum(k)*sum(l)
 dterm3 <- 2/(len^3)*sum(k %*% l)
 dHSIC <- 1/(len^2)*dterm1 + dterm2 - dterm3
 
-
-dHSIC::dhsic(list(X,y))$dHSIC
-dHSIC::dhsic(X,y)$dHSIC
-
-dHSIC::dhsic(X)
 
 ###### QUICK BENCHMARKING
 shapley2 <- function(y, X) {
