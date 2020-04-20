@@ -95,12 +95,22 @@ for (j in 1:d) {
 term1 <- sum(term1)
 term3 <- sum(term3)
 dHSIC = 1/len^2 * term1 + term2 - term3
+dHSIC
 
 Xt <- X
+
+k <- K[[1]]; l <- K[[2]]
+
+dterm1 <- sum(diag(k %*% l))
+dterm2 <- 1/(len^4)*sum(k)*sum(l)
+dterm3 <- 2/(len^3)*sum(k %*% l)
+dHSIC <- 1/(len^2)*dterm1 + dterm2 - dterm3
+
 
 dHSIC::dhsic(list(X,y))$dHSIC
 dHSIC::dhsic(X,y)$dHSIC
 
+dHSIC::dhsic(X)
 
 ###### QUICK BENCHMARKING
 shapley2 <- function(y, X) {
