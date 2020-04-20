@@ -49,7 +49,14 @@ def cpp_bw(x):
     starts at line 60 in
     https://github.com/cran/dHSIC/blob/master/src/rcpp_functions.cpp
     """
-    length, d = x.shape
+    length = x.shape[0]
+
+    try:
+        d = x.shape[1]
+    except IndexError:
+        d = 1
+        x = numpy.matrix(x).T
+
     if(length > 1000):
         length = 1000
 
@@ -61,7 +68,7 @@ def cpp_bw(x):
         j = i+1;
         while(j < length):
             for l in range(0, d):
-                xnorm += (x[i][l]-x[j][l])**2.0
+                xnorm += (x[i][l]-x[j][l])**2
             bandvec[count] = xnorm
             xnorm = 0.0
             j += 1
@@ -84,7 +91,13 @@ def cpp_K(x, bw=None):
 
     """
     n = x.shape[0]
-    d = x.shape[1]
+
+    try:
+        d = x.shape[1]
+    except IndexError:
+        d = 1
+        x = numpy.matrix(x).T
+
     xnorm = 0
     K = numpy.zeros((n,n)) #n x n
     if bw is None:
@@ -131,6 +144,13 @@ if __name__ == "__main__":
 
     #X = numpy.array([numpy.linspace(-1, 1, N) for _ in range(D)]).T
     X = numpy.array([numpy.random.uniform(-1, 1, N) for _ in range(D)]).T
+
+    print(X[:,1].shape)
+    #print(numpy.multiply(cpp_K(X[:,0]), cpp_K(X[:,1])))
+    print(cpp_K(X))
+    print(cpp_K(X[:,0]))
+    print(cpp_K(X[:,1]))
+    sys.exit()
 
     # --- Test bandwidth calculations:
     print(cpp_bw(X))
