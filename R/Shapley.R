@@ -51,8 +51,8 @@ for (i in 1:4) { print(shapley(CF, v = i)) }
 old_shapley(y,X,DC)
 
 #### TEST WITH NON-RANDOM DATA
-d <- 4
-n <- 100
+d <- 2
+n <- 5
 X <- matrix(rep(seq(-1,1,length.out = n),d),n,d)
 y <- X^2 %*% (2*(0:(d-1)))
 
@@ -61,6 +61,28 @@ HSIC(X,y)
 CF <- estimate_characteristic_function(X, DC, y = y)
 shapley(CF, v = 1)
 old_shapley(y,X,DC)
+
+
+dhsic
+dHSIC:::gaussian_grammat_rcpp()
+
+
+median_bandwidth <- function(x) {
+  bandwidth <- dHSIC:::median_bandwidth_rcpp(x[sample(1:len), 
+                                            , drop = FALSE], len, ncol(x))
+  if (bandwidth == 0) {
+    bandwidth <- 0.001
+  }
+  return(bandwidth)
+}
+
+for (j in 1:d) {
+  bandwidth[j] <- median_bandwidth(X[[j]])
+  K[[j]] <- dHSIC:::gaussian_grammat_rcpp(X[[j]], bandwidth[j], 
+                                          len, ncol(X[[j]]))
+}
+
+dHSIC:::gaussian_grammat_rcpp(X[[1]], bandwidth[1], len, ncol(X[[1]]))
 
 
 ###### QUICK BENCHMARKING
