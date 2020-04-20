@@ -14,4 +14,22 @@ AIDC <- function(y,X){if (length(X) == 0) {0} else {
   dcor(y %*% sqrtm(solve(cov(y))), X %*% sqrtm(solve(cov(X))))$dcor}
 }
 # Hilbert Schmidt Independence Criterion
-HSIC <- function(y,X){if (length(X) == 0) {0} else {dhsic(X,y)$dHSIC}}
+HSIC <- function(y,X){if (length(X) == 0) {0} else {hsic(y,X)}}
+
+
+
+
+# UTILITY FUNCTION HELPERS ------------------------------------------------
+gaussianK <- function(X) {
+  n <- nrow(X); d <- ncol(X)
+  bandwidth <- dHSIC:::median_bandwidth_rcpp(X, n, d)
+  return(dHSIC:::gaussian_grammat_rcpp(X, bandwidth, n, d))
+}
+hsic <- function(y,X) {
+  k <- gaussianK(X); l <- gaussianK(y)
+  n <- nrow(k)
+  dterm1 <- sum(k*l)
+  dterm2 <- 1/(n^4)*sum(k)*sum(l)
+  dterm3 <- 2/(n^3)*sum(k %*% l)
+  return(1/(n^2)*dterm1 + dterm2 - dterm3)
+}
