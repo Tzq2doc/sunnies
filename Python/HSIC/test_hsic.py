@@ -50,7 +50,10 @@ def japanese_bw(x):
 
 def HSIC(x, Y):
     #return numpy.sum(centering(rbf(x)) * centering(rbf(Y)))
-    return numpy.trace(numpy.matmul(centering(rbf(x)),centering(rbf(Y))))/(N-1)/(N-1)
+    #return numpy.sum(centering(rbf(x)) * centering(rbf(Y)))/(N-1)/(N-1)
+    #return numpy.trace(numpy.matmul(centering(rbf(x)),centering(rbf(Y))))
+    #return numpy.trace(numpy.matmul(centering(rbf(x)),centering(rbf(Y))))/(N-1)/(N-1)
+    return numpy.trace(numpy.matmul(centering(rbf(x)),centering(rbf(Y))))/N/N
 
 
 def cpp_bw(x):
@@ -124,24 +127,31 @@ def cpp_K(x, bw=None):
             j += 1
     return K
 
-def r_dhsic(K):
+def r_dhsic(K_list):
     """
     starts at line 112 in
     https://github.com/cran/dHSIC/blob/master/R/dhsic.R
     # Compute dHSIC
     """
-    length, d = K.shape #TODO: check that K is always NxN
-    term1 = 1
-    term2 = 1
-    term3 = 2/length
-    for j in range(0, d):
-        Kj = cpp_K(X[:,j])
-        term1 = term1*Kj
-        term2 = 1/length/length*numpy.sum(Kj)
-        #term3 <- 1/len*term3*colSums(K[[j]])
-        term1 = sum(term1)
-        #term3 = sum(term3)
-        dHSIC = 1/length**2*term1+term2#-term3
+    if not isinstance(K_list, list):
+        K_list = list(K_list)
+
+    n_k = len(K_list)
+
+    length = K_list[0].shape[0]
+    term1 = 1.0
+    term2 = 1.0
+    term3 = 2.0/length
+
+    for j in range(0, n_k):
+        K_j = K_list[j]
+        term1 = numpy.multiply(term1, K_j)
+        term2 = 1.0/length/length*term2*numpy.sum(K_j)
+        term3 = 1.0/length*term3*K_j.sum(axis=0)
+
+    term1 = numpy.sum(term1)
+    term3 = numpy.sum(term3)
+    dHSIC = (1.0/length)**2*term1+term2-term3
     return dHSIC
 
 
@@ -156,17 +166,23 @@ if __name__ == "__main__":
     Y = numpy.matmul(numpy.multiply(X, X), TWO_D)
     # ---
 
+    # --- Test dHSIC calculations
+    K_list = [cpp_K(X), cpp_K(Y)]
+    #r_dhsic(K_list)
+    print(r_dhsic(K_list))
+    print(HSIC(X, Y))
+
     # --- Test bandwidth calculations:
-    print(cpp_bw(X))
-    print(japanese_bw(X))
+    #print(cpp_bw(X))
+    #print(japanese_bw(X))
     #sys.exit()
 
     # --- Test rbf = cpp_K
     #print(cpp_K(Y, bw=1).round(decimals=2) == rbf(Y, sigma=1).round(decimals=2))
-    print(cpp_K(X).round(decimals=2) == rbf(X).round(decimals=2))
-    print(cpp_K(Y).round(decimals=2) == rbf(Y).round(decimals=2))
+    #print(cpp_K(X).round(decimals=2) == rbf(X).round(decimals=2))
+    #print(cpp_K(Y).round(decimals=2) == rbf(Y).round(decimals=2))
     #print(cpp_K(X, bw=1).round(decimals=2) == rbf(X, sigma=1).round(decimals=2))
-    sys.exit()
+    #sys.exit()
 
     #Y = numpy.reshape(Y, (N,1))
 
