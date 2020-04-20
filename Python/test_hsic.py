@@ -157,20 +157,25 @@ def r_dhsic(K_list):
 
 if __name__ == "__main__":
     # --- Data
-    D = 2#4
-    N = 5#100
+    D = 4
+    N = 100
 
+    numpy.random.seed(0)
     #X = numpy.array([numpy.linspace(-1, 1, N) for _ in range(D)]).T
     X = numpy.array([numpy.random.uniform(-1, 1, N) for _ in range(D)]).T
     TWO_D = 2*numpy.array(range(D))
     Y = numpy.matmul(numpy.multiply(X, X), TWO_D)
     # ---
 
+    # --- Test Affine invariance
+    import dcor
+    print(X)
+    print(dcor.distance_correlation_af_inv(Y, X))
     # --- Test dHSIC calculations
-    K_list = [cpp_K(X), cpp_K(Y)]
+    #K_list = [cpp_K(X), cpp_K(Y)]
     #r_dhsic(K_list)
-    print(r_dhsic(K_list))
-    print(HSIC(X, Y))
+    #print(r_dhsic(K_list))
+    #print(HSIC(X, Y))
 
     # --- Test bandwidth calculations:
     #print(cpp_bw(X))
