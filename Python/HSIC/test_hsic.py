@@ -77,7 +77,7 @@ def cpp_bw(x):
     return bandwidth
 
 
-def cpp_xnorm(x, bw=None):
+def cpp_K(x, bw=None):
     """
     starts at line 5 in
     https://github.com/cran/dHSIC/blob/master/src/rcpp_functions.cpp
@@ -138,9 +138,9 @@ if __name__ == "__main__":
     #sys.exit()
 
     # --- Test xnorm = rbf
-    print(cpp_xnorm(X, bw=1).round(decimals=2) == rbf(X, sigma=1).round(decimals=2))
-    print(cpp_xnorm(X).round(decimals=2) == rbf(X).round(decimals=2))
-    K = cpp_xnorm(X)
+    print(cpp_K(X, bw=1).round(decimals=2) == rbf(X, sigma=1).round(decimals=2))
+    print(cpp_K(X).round(decimals=2) == rbf(X).round(decimals=2))
+    K = cpp_K(X)
     sys.exit()
 
     #TWO_D = 2*numpy.array(range(D))
