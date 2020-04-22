@@ -4,6 +4,12 @@ from sklearn.metrics import accuracy_score
 import numpy
 import matplotlib.pyplot as plt
 
+# --- Hacky shit
+import sys
+sys.path.insert(0, "../")
+#import shapley_helpers as sh
+import shapley as shapley
+# ---
 
 # --- Data
 D = 5
@@ -28,27 +34,60 @@ y_pred = model.predict(X_test)
 
 # --- Save predictions
 filename = "y_pred_xgb"
-numpy.save(filename, y_pred)
-print("Saved file {0}.npy".format(filename))
-
-plt.scatter(y_test, y_pred)
-plt.show()
+#numpy.save(filename, y_pred)
+#print("Saved file {0}.npy".format(filename))
 
 # --- Feature importances
 feature_importance = model.feature_importances_
-print("Feature importances:")
-for _n, _imp in enumerate(feature_importance):
-    print("Feature {0}: {1}".format(_n, _imp))
 
-fig, ax = plt.subplots()
-ax.spines['top'].set_visible(False)
-ax.spines['right'].set_visible(False)
-ax.spines['left'].set_visible(False)
-ax.spines['bottom'].set_color('#DDDDDD')
-ax.tick_params(bottom=False, left=False)
-ax.set_axisbelow(True)
-ax.yaxis.grid(True, color='#EEEEEE')
-ax.xaxis.grid(False)
+shapley_values_actual = shapley.calc_shapley_values(X_test, y_test, list(range(D)), "dcor")
+shapley_values_xgb = shapley.calc_shapley_values(X_test, y_pred, list(range(D)), "dcor")
 
-plt.bar(range(len(feature_importance)), feature_importance)
-plt.show()
+print(shapley_values_actual)
+print(shapley_values_xgb)
+
+def display_shapley():
+
+    fig, ax = plt.subplots()
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+    ax.spines['bottom'].set_color('#DDDDDD')
+    ax.tick_params(bottom=False, left=False)
+    ax.set_axisbelow(True)
+    ax.yaxis.grid(True, color='#EEEEEE')
+    ax.xaxis.grid(False)
+
+    plt.bar(range(len(shapley_values_actual)), shapley_values_actual, color="red",
+            alpha=0.5, label="True")
+    plt.bar(range(len(shapley_values_xgb)), shapley_values_xgb, color="blue",
+            alpha=0.5, label="Predicted")
+    plt.legend()
+    plt.show()
+
+
+def display_predictions():
+    plt.scatter(y_test, y_pred)
+    plt.show()
+
+def display_feature_importances():
+    print("Feature importances:")
+    for _n, _imp in enumerate(feature_importance):
+        print("Feature {0}: {1}".format(_n, _imp))
+
+    fig, ax = plt.subplots()
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+    ax.spines['bottom'].set_color('#DDDDDD')
+    ax.tick_params(bottom=False, left=False)
+    ax.set_axisbelow(True)
+    ax.yaxis.grid(True, color='#EEEEEE')
+    ax.xaxis.grid(False)
+
+    plt.bar(range(len(feature_importance)), feature_importance)
+    plt.show()
+
+display_predictions()
+display_feature_importances()
+display_shapley()
