@@ -1,112 +1,49 @@
-import matplotlib.pyplot as plt
-import scipy.linalg
+from typing import Union
+
+from matplotlib.colors import LinearSegmentedColormap, ListedColormap, Colormap
+from xgboost import XGBRegressor
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
 import numpy
-import math
-import sys
+import matplotlib.pyplot as plt
+import shapley as shapley
 
+import shap
 
-def cpp_bw(x):
-    """
-    starts at line 60 in
-    https://github.com/cran/dHSIC/blob/master/src/rcpp_functions.cpp
-    """
-    length = x.shape[0]
+# --- Data with no relationship
+D = 5
+N = 1000
+X = numpy.array([numpy.random.uniform(-1, 1, N) for _ in range(D + 1)]).T
+Y, X = X[:, 0], X[:, 1:]
+# ---
 
-    try:
-        d = x.shape[1]
-    except IndexError:
-        d = 1
-        x = numpy.matrix(x).T
+# --- Data with high correlations
+D = 5
+N = 1000
+sigma = 0.2
+X = numpy.array([numpy.random.uniform(-1, 1, N) for _ in range(D)]).T
+X[:, 1] = X[:, 0] + numpy.random.normal(0, sigma, N)
+X[:, 2] = X[:, 0] + numpy.random.normal(0, sigma, N)
+Y = numpy.matmul(numpy.multiply(X, X), numpy.ones(D))
+# ---
 
-    if(length > 1000):
-        length = 1000
+X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.2, random_state=7)
 
-    lentot = length*(length+1)/2-length
-    bandvec = numpy.zeros((int(lentot)))
-    xnorm = 0.0
-    count = 0
-    for i in range(0, length):
-        j = i+1;
-        while(j < length):
-            for l in range(0, d):
-                xnorm += (x[i][l]-x[j][l])**2
-            bandvec[count] = xnorm
-            xnorm = 0.0
-            j += 1
-            count += 1
+# --- Fit model
+model = XGBRegressor()
+model.fit(X_train, y_train)
 
-    bandwidth = numpy.median(bandvec)
-    #v = numpy.copy(bandvec)
-    #v.sort()
-    #middle = int(lentot/2)
-    #bandwidth = v[middle]
-    #std::nth_element(v.begin(), v.begin() + middle, v.end());
-    bandwidth = numpy.sqrt(bandwidth*0.5)
-    return bandwidth
+# --- Predict
+y_pred = model.predict(X_test)
 
+# --- Feature importances
+feature_importance = model.feature_importances_
 
-def cpp_K(x, bw=None):
-    """
-    starts at line 5 in
-    https://github.com/cran/dHSIC/blob/master/src/rcpp_functions.cpp
+shapley_values_actual = shapley.calc_shapley_values(X_test, y_test, list(range(D)), "dcor")
+shapley_values_xgb = shapley.calc_shapley_values(X_test, y_pred, list(range(D)), "dcor")
 
-    """
-    n = x.shape[0]
-
-    try:
-        d = x.shape[1]
-    except IndexError:
-        d = 1
-        x = numpy.matrix(x).T
-
-    xnorm = 0
-    K = numpy.zeros((n,n)) #n x n
-    if bw is None:
-        bw = cpp_bw(x)
-
-    for i in range(n+1):
-        j=i
-        while j<n:
-            for l in range(0,d):
-                xnorm += (x[i][l] - x[j][l])**2
-            K[i][j] = numpy.exp(-xnorm/(2.0*bw**2))
-            #K[i][j] = xnorm
-            K[j][i] = K[i][j]
-            xnorm = 0.0
-            j += 1
-    return K
-
-
-def japanese_bw(x):
-    try:
-        x.shape[1]
-    except IndexError:
-        x = numpy.reshape
-    GX = numpy.dot(x, x.T)
-    KX = numpy.diag(GX) - GX + (numpy.diag(GX) - GX).T
-    mdist = numpy.median(KX[KX != 0])
-    sigma = math.sqrt(mdist*0.5)
-    return sigma
-
-
-
-
-japanese_bw(X)
-japanese_bw(Y)
-Y = numpy.matrix(Y).T
-n = Y.shape[0]
-GX = numpy.dot(Y, Y.T)
-KX = numpy.diag(GX) - GX + (numpy.diag(GX) - GX).T
-numpy.median(KX[KX != 0], axis = 1)
-sigma = math.sqrt(mdist * 0.5)
-return sigma
-
-D = 2#4
-N = 5#100
-
-X = numpy.array([numpy.linspace(-1, 1, N) for _ in range(D)]).T
-#X = numpy.array([numpy.random.uniform(-1, 1, N) for _ in range(D)]).T
-TWO_D = 2*numpy.array(range(D))
-Y = numpy.matmul(numpy.multiply(X, X), TWO_D)
-
-cpp_K(X)
+print(shapley_values_actual)
+print(shapley_values_xgb)
+display_predictions()
+display_feature_importances()
+display_shapley()
