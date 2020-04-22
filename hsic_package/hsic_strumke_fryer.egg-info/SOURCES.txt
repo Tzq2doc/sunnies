@@ -1,0 +1,8 @@
+README.md
+setup.py
+hsic/__init__.py
+hsic/calc_hsic.py
+hsic_strumke_fryer.egg-info/PKG-INFO
+hsic_strumke_fryer.egg-info/SOURCES.txt
+hsic_strumke_fryer.egg-info/dependency_links.txt
+hsic_strumke_fryer.egg-info/top_level.txt
