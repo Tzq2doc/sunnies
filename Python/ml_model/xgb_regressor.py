@@ -24,5 +24,6 @@ model.fit(X_train, y_train)
 # --- Predict
 y_pred = model.predict(X_test)
 
-print(y_pred)
-
+import matplotlib.pyplot as plt
+plt.scatter(y_test, y_pred)
+plt.show()
