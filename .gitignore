@@ -40,3 +40,6 @@ vignettes/*.pdf
 
 # Pycharm thing
 .idea/
+
+#
+*.pyc

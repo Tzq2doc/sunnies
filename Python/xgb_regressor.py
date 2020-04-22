@@ -3,13 +3,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 import numpy
 import matplotlib.pyplot as plt
-
-# --- Hacky shit
-import sys
-sys.path.insert(0, "../")
-#import shapley_helpers as sh
 import shapley as shapley
-# ---
 
 # --- Data
 D = 5
@@ -22,7 +16,7 @@ Y = numpy.matmul(numpy.multiply(X, X), TWO_D)
 # ---
 
 X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.2,
-        random_state=7)
+                random_state=7)
 
 # --- Fit model
 model = XGBRegressor()
