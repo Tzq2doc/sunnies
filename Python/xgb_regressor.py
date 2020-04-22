@@ -30,17 +30,20 @@ model.fit(X_train, y_train)
 
 # --- Predict
 y_pred = model.predict(X_test)
+residuals = y_test - y_pred
 
 # --- Save predictions
-filename = "y_pred_xgb"
-# numpy.save(filename, y_pred)
-# print("Saved file {0}.npy".format(filename))
+#filename = "y_pred_xgb"
+#numpy.save(filename, y_pred)
+#print("Saved file {0}.npy".format(filename))
 
 # --- Feature importances
 feature_importance = model.feature_importances_
 
 shapley_values_actual = shapley.calc_shapley_values(X_test, y_test, list(range(D)), "dcor")
 shapley_values_xgb = shapley.calc_shapley_values(X_test, y_pred, list(range(D)), "dcor")
+shapley_values_residuals = shapley.calc_shapley_values(X_test, residuals, list(range(D)), "dcor")
+
 
 print(shapley_values_actual)
 print(shapley_values_xgb)
@@ -88,20 +91,36 @@ def display_feature_importances():
     plt.bar(range(len(feature_importance)), feature_importance)
     plt.show()
 
+def display_residuals_shapley():
+    fig, ax = plt.subplots()
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+    ax.spines['bottom'].set_color('#DDDDDD')
+    ax.tick_params(bottom=False, left=False)
+    ax.set_axisbelow(True)
+    ax.yaxis.grid(True, color='#EEEEEE')
+    ax.xaxis.grid(False)
 
+    plt.bar(range(len(shapley_values_residuals)), shapley_values_residuals, color="red",
+            alpha=0.5)
+    plt.show()
+
+def display_shap():
+    # --- SHAP package
+    explainer = shap.TreeExplainer(model)
+    expected_value = explainer.expected_value
+    shap_values = explainer.shap_values(X_test)
+    my_cmap = plt.get_cmap('viridis')
+    plt.figure()
+    shap.summary_plot(shap_values, X_test, show=False)
+    # Change the colormap of the artists
+    for fc in plt.gcf().get_children():
+        for fcc in fc.get_children():
+            if hasattr(fcc, "set_cmap"):
+                fcc.set_cmap(my_cmap)
 # display_predictions()
 # display_feature_importances()
 # display_shapley()
-
-# --- SHAP package
-explainer = shap.TreeExplainer(model)
-expected_value = explainer.expected_value
-shap_values = explainer.shap_values(X_test)
-my_cmap = plt.get_cmap('viridis')
-plt.figure()
-shap.summary_plot(shap_values, X_test, show=False)
-# Change the colormap of the artists
-for fc in plt.gcf().get_children():
-    for fcc in fc.get_children():
-        if hasattr(fcc, "set_cmap"):
-            fcc.set_cmap(my_cmap)
+# display_shap()
+display_residuals_shapley()
