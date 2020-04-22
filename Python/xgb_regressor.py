@@ -1,3 +1,6 @@
+from typing import Union
+
+from matplotlib.colors import LinearSegmentedColormap, ListedColormap, Colormap
 from xgboost import XGBRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
@@ -11,14 +14,14 @@ import shap
 D = 5
 N = 1000
 
-#X = numpy.array([numpy.linspace(-1, 1, N) for _ in range(D)]).T
+# X = numpy.array([numpy.linspace(-1, 1, N) for _ in range(D)]).T
 X = numpy.array([numpy.random.uniform(-1, 1, N) for _ in range(D)]).T
-TWO_D = 2*numpy.array(range(D))
+TWO_D = 2 * numpy.array(range(D))
 Y = numpy.matmul(numpy.multiply(X, X), TWO_D)
 # ---
 
 X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.2,
-                random_state=7)
+                                                    random_state=7)
 
 # --- Fit model
 model = XGBRegressor()
@@ -30,8 +33,8 @@ y_pred = model.predict(X_test)
 
 # --- Save predictions
 filename = "y_pred_xgb"
-#numpy.save(filename, y_pred)
-#print("Saved file {0}.npy".format(filename))
+# numpy.save(filename, y_pred)
+# print("Saved file {0}.npy".format(filename))
 
 # --- Feature importances
 feature_importance = model.feature_importances_
@@ -42,8 +45,8 @@ shapley_values_xgb = shapley.calc_shapley_values(X_test, y_pred, list(range(D)),
 print(shapley_values_actual)
 print(shapley_values_xgb)
 
-def display_shapley():
 
+def display_shapley():
     fig, ax = plt.subplots()
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
@@ -66,6 +69,7 @@ def display_predictions():
     plt.scatter(y_test, y_pred)
     plt.show()
 
+
 def display_feature_importances():
     print("Feature importances:")
     for _n, _imp in enumerate(feature_importance):
@@ -84,12 +88,20 @@ def display_feature_importances():
     plt.bar(range(len(feature_importance)), feature_importance)
     plt.show()
 
-#display_predictions()
-#display_feature_importances()
-#display_shapley()
+
+# display_predictions()
+# display_feature_importances()
+# display_shapley()
 
 # --- SHAP package
 explainer = shap.TreeExplainer(model)
 expected_value = explainer.expected_value
 shap_values = explainer.shap_values(X_test)
-shap.summary_plot(shap_values, X_test, color_bar=True)
+my_cmap = plt.get_cmap('viridis')
+plt.figure()
+shap.summary_plot(shap_values, X_test, show=False)
+# Change the colormap of the artists
+for fc in plt.gcf().get_children():
+    for fcc in fc.get_children():
+        if hasattr(fcc, "set_cmap"):
+            fcc.set_cmap(my_cmap)
