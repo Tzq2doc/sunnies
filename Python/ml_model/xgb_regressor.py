@@ -26,6 +26,11 @@ model.fit(X_train, y_train)
 # --- Predict
 y_pred = model.predict(X_test)
 
+# --- Save predictions
+filename = "y_pred_xgb"
+numpy.save(filename, y_pred)
+print("Saved file {0}.npy".format(filename))
+
 plt.scatter(y_test, y_pred)
 plt.show()
 
