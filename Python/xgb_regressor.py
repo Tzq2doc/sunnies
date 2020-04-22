@@ -5,6 +5,8 @@ import numpy
 import matplotlib.pyplot as plt
 import shapley as shapley
 
+import shap
+
 # --- Data
 D = 5
 N = 1000
@@ -82,6 +84,12 @@ def display_feature_importances():
     plt.bar(range(len(feature_importance)), feature_importance)
     plt.show()
 
-display_predictions()
-display_feature_importances()
-display_shapley()
+#display_predictions()
+#display_feature_importances()
+#display_shapley()
+
+# --- SHAP package
+explainer = shap.TreeExplainer(model)
+expected_value = explainer.expected_value
+shap_values = explainer.shap_values(X_test)
+shap.summary_plot(shap_values, X_test, color_bar=True)
