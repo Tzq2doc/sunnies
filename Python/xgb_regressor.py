@@ -10,14 +10,30 @@ import shapley as shapley
 
 import shap
 
-# --- Data
+# --- Data with independent quadratic features
 D = 5
 N = 1000
-
 # X = numpy.array([numpy.linspace(-1, 1, N) for _ in range(D)]).T
 X = numpy.array([numpy.random.uniform(-1, 1, N) for _ in range(D)]).T
 TWO_D = 2 * numpy.array(range(D))
 Y = numpy.matmul(numpy.multiply(X, X), TWO_D)
+# ---
+
+# --- Data with no relationship
+D = 5
+N = 1000
+X = numpy.array([numpy.random.uniform(-1, 1, N) for _ in range(D + 1)]).T
+Y, X = X[:, 0], X[:, 1:]
+# ---
+
+# --- Data with high correlations
+D = 5
+N = 1000
+sigma = 0.2
+X = numpy.array([numpy.random.uniform(-1, 1, N) for _ in range(D)]).T
+X[:, 1] = X[:, 0] + numpy.random.normal(0, sigma, N)
+X[:, 2] = X[:, 0] + numpy.random.normal(0, sigma, N)
+Y = numpy.matmul(numpy.multiply(X, X), numpy.ones(D))
 # ---
 
 X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.2,
