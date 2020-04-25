@@ -10,22 +10,22 @@ import shapley as shapley
 
 import shap
 
-# --- Data with independent quadratic features
-D = 5
-N = 1000
-# X = numpy.array([numpy.linspace(-1, 1, N) for _ in range(D)]).T
-X = numpy.array([numpy.random.uniform(-1, 1, N) for _ in range(D)]).T
-TWO_D = 2 * numpy.array(range(D))
-Y = numpy.matmul(numpy.multiply(X, X), TWO_D)
-# ---
-
-# --- Data with no relationship
-D = 5
-N = 1000
-X = numpy.array([numpy.random.uniform(-1, 1, N) for _ in range(D + 1)]).T
-Y, X = X[:, 0], X[:, 1:]
-# ---
-
+## --- Data with independent quadratic features
+#D = 5
+#N = 1000
+## X = numpy.array([numpy.linspace(-1, 1, N) for _ in range(D)]).T
+#X = numpy.array([numpy.random.uniform(-1, 1, N) for _ in range(D)]).T
+#TWO_D = 2 * numpy.array(range(D))
+#Y = numpy.matmul(numpy.multiply(X, X), TWO_D)
+## ---
+#
+## --- Data with no relationship
+#D = 5
+#N = 1000
+#X = numpy.array([numpy.random.uniform(-1, 1, N) for _ in range(D + 1)]).T
+#Y, X = X[:, 0], X[:, 1:]
+## ---
+#
 # --- Data with high correlations
 D = 5
 N = 1000
@@ -135,8 +135,8 @@ def display_shap():
         for fcc in fc.get_children():
             if hasattr(fcc, "set_cmap"):
                 fcc.set_cmap(my_cmap)
-# display_predictions()
-# display_feature_importances()
-# display_shapley()
+display_predictions()
+display_feature_importances()
+display_shapley()
 # display_shap()
 display_residuals_shapley()

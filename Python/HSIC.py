@@ -58,17 +58,27 @@ def dHSIC_calc0(K_list):
     dterm3 = numpy.ones((length, length))
 
     # Works:
-    #k = K_list[0]
-    #l = K_list[1]
-    #dterm1 = numpy.sum(numpy.multiply(k, l))
-    #dterm2 = 1/(length**4) * numpy.sum(k) * numpy.sum(l)
-    #dterm3 = 2/(length**3) * numpy.sum(numpy.matmul(k, l))
+    k = K_list[0]
+    l = K_list[1]
+    dterm1 = numpy.sum(numpy.multiply(k, l))
+    print(dterm1)
+    dterm2 = 1/(length**4) * numpy.sum(k) * numpy.sum(l)
+    print(dterm2)
+    dterm3 = 2/(length**3) * numpy.sum(numpy.multiply(k, l))
+    print(dterm3)
+    dterm3 = 2/(length**3) * numpy.sum(numpy.matmul(k, l))
+    print(dterm3)
     for j in range(0, n_k):
         K_j = K_list[j]
         dterm1 = numpy.sum(numpy.multiply(dterm1, K_j))
         dterm2 = 1/(length**4) * numpy.sum(dterm2) * numpy.sum(K_j)
-        dterm3 = 2/(length**3) * numpy.matmul(dterm3, K_j)
-    dterm3 = numpy.sum(dterm3)
+        dterm3 = 2/(length**3) * numpy.sum(numpy.multiply(dterm3, K_j))
+    print("suggested term 1")
+    print(dterm1)
+    print("suggested term 2")
+    print(dterm2)
+    print("suggested term 3")
+    print(dterm3)
     return (1/(length**2)*dterm1 + dterm2 - dterm3)
 
 
@@ -95,6 +105,12 @@ def dHSIC_calc(K_list):
 
     term1 = numpy.sum(term1)
     term3 = numpy.sum(term3)
+    #print("correct term 1")
+    #print(term1)
+    #print("correct term 2")
+    #print(term2)
+    #print("correct term 3")
+    #print(term3)
     dHSIC = (1.0/length)**2*term1+term2-term3
     return dHSIC
 
@@ -120,7 +136,7 @@ def dHSIC(*argv):
 if __name__ == "__main__":
 
     # --- Data
-    D = 4
+    D = 5
     N = 100
 
     #X = numpy.array([numpy.linspace(-1, 1, N) for _ in range(D)]).T
@@ -132,6 +148,7 @@ if __name__ == "__main__":
     # --- Test dHSIC calculations
     K_list = [gaussian_grammat(_x) for _x in [X, Y]]
     print(dHSIC_calc(K_list))
+    #print(dHSIC_calc0(K_list))
     print(dHSIC(X, Y))
 
     #print(dHSIC(X, Y, X, Y))
