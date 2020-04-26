@@ -32,4 +32,3 @@ dat_unif_squared_corr <- function(d = 4, n = 100, sigma = 0.2) {
 dat_unif_independent <- function(d = 4, n = 100) {
   return(matrix(runif(n*(d+1),-1,1), n, d+1))
 }
-
