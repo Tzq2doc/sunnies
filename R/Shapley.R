@@ -3,7 +3,7 @@ source("utility_functions.R")
 source("shapley_helpers.R")
 source("datasets/simulated_datasets.R")
 
-results <- readRDS("results/compare_them_all_1000.Rds")
+results <- readRDS("results/sim1_n1000_N1000_d4_unif_squared.Rds")
 
 boxplot(results$R2, outline = F)
 boxplot(results$HSIC, outline = F)
