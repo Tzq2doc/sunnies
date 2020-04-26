@@ -4,20 +4,22 @@ source("shapley_helpers.R")
 source("datasets/simulated_datasets.R")
 
 ### Parameter names
-n <- 100  # n: sample size (used 1000 for saved data)
-d <- 4    # d: number of features (used 4 for saved data)
-N <- 100  # N: number of iterations simulating data (used 1000 for saved data)
-data_gen <- dat_unif_squared # data_gen: the data generating function
-
+# n: sample size (used 1000 for saved data)
+# d: number of features (used 4 for saved data)
+# N: number of iterations simulating data (used 1000 for saved data)
+# data_gen: the data generating function
 #### Call shapley_sim1 1000 times with each dependence measure
-results <- list()
-utilities <- c("R2","DC","BCDC","AIDC","HSIC")
-for (i in 1:length(utilities)) {
-  results[[utilities[i]]] <- shapley_sim1(
-    get(utilities[i]), N, n , d, data_gen)
+shapley_sim1 <- function(n, d, N, data_gen, overwrite = F) {
+  results <- list()
+  utilities <- c("R2","DC","BCDC","AIDC","HSIC")
+  for (i in 1:length(utilities)) {
+    results[[utilities[i]]] <- shapley_sim1(
+      get(utilities[i]), N, n , d, data_gen)
+  }
+  fun_name <- as.character(substitute(data_gen))
+  dir <- "results/"
+  loc <- paste0(dir, "sim1_n",n,"_N",N,"_d",d,"_", fun_name,".Rds")
+  if (!overwrite && file.exists(loc)) {
+    stop("file exists, perhaps choose overwrite = T")}
+  saveRDS(results, loc)
 }
-
-#saveRDS(results, "results/sim1_n1000_N1000_d4_unif_squared.Rds")
-results <- readRDS("results/sim1_n1000_N1000_d4_unif_squared.Rds")
-res_means <- lapply(results, function(r) {apply(r, FUN = mean, MARGIN = 2)})
-for (u in utilities) { barplot(res_means[[u]], main = u) }

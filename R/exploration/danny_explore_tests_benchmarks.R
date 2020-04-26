@@ -12,6 +12,11 @@ set.seed(0)
 X <- matrix(runif(n*d,-1,1), n, d)
 y <- X^2 %*% (2*(0:(d-1)))
 
+plot(X[,1], y)
+points(X[,2], y, col = "green")
+points(X[,3], y, col = "blue")
+points(X[,4], y, col = "red")
+
 CF <- estimate_characteristic_function(X, HSIC, y = y)
 for (i in 1:4) { print(shapley(CF, v = i)) }
 
