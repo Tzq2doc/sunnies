@@ -18,7 +18,6 @@ HSIC <- function(y,X){if (length(X) == 0) {0} else {hsic(y,X)}}
 
 
 
-
 # UTILITY FUNCTION HELPERS ------------------------------------------------
 gaussianK <- function(X) {
   n <- nrow(X); d <- ncol(X)

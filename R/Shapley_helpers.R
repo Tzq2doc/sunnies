@@ -1,15 +1,16 @@
-
-### shapleyN calls the shapley function for many
-# iterations of simulated data
+### shapley_sim1 calls the shapley function for N
+# samples of the simulated data given by data_gen
 ## Parameter names
-# n: sample size
-# d: number of features
-# N: number of iterations simulating data
-shapleyN <- function(utility, N, n, d) {
+# n:        sample size
+# d:        number of features
+# N:        number of samples
+# data_gen: a data generating function (see simulated_datasets.R)
+# ... :     arguments passed to data_gen
+shapley_sim1 <- function(utility, N, n, d, data_gen, ...) {
   results <- matrix(0, nrow = N, ncol = d)
   for ( i in 1:N ) {
-    X <- matrix(runif(n*d,-1,1), n, d)
-    y <- X^2 %*% (2*(0:(d-1)))
+    dat <- data_gen(d, n, ...)
+    y <- dat[,1, drop=F]; X <- dat[,-1, drop=F]
     CF_i <- estimate_characteristic_function(X, utility, y = y)
     results[i,] <- shapley_(CF_i, 1:d)
   }
@@ -56,16 +57,16 @@ estimate_characteristic_function <- function(X, utility, ...) {
   for ( s in team_sizes ) {
     teams_of_size_s <- combn( players, s, simplify = F )
     for ( team in teams_of_size_s ) {
-      values[[string(team)]] <- utility(X[,team,drop = F], ...) 
+      values[[access_string(team)]] <- utility(X[,team,drop = F], ...) 
     }
   }
   # We created some bindings in this environment 
   # and we are now returning a function that 
   # permantently has access to this environment,
   # so we can access this environment from anywhere
-  return(function(t){values[[string(t)]]})
+  return(function(t){values[[access_string(t)]]})
 }
 
 # This function converts teams into strings so we can look
 # them up in the characteristic function, a bit like a dictionary.
-string <- function(team) {paste0("-", sort(team), collapse = "")}
+access_string <- function(team) {paste0("-", sort(team), collapse = "")}
