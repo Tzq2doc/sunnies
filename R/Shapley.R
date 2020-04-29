@@ -2,6 +2,7 @@ source("old/old_shapley_helpers.R")
 source("utility_functions.R")
 source("shapley_helpers.R")
 source("datasets/simulated_datasets.R")
+source("simulations.R")
 
 
 # Shapley is a decomposition, not representing pairwise correlations ------
@@ -21,7 +22,7 @@ loc4 <- shapley_sim1_N(n=100,  d=5, N=100,  dat_unif_squared, loc_only = T)
 loc5 <- shapley_sim1_N(n=100,  d=3, N=100,  dat_unif_squared)
 
 #results <- readRDS(loc1)
-results <- readRDS(loc5)
+results <- readRDS(loc4)
 
 res_means <- lapply(results, function(r) {apply(r, FUN = mean, MARGIN = 2)})
 for (u in utilities) { barplot(res_means[[u]], main = u) }
