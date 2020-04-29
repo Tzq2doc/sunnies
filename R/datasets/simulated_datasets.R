@@ -32,3 +32,21 @@ dat_unif_squared_corr <- function(d = 4, n = 100, sigma = 0.2) {
 dat_unif_independent <- function(d = 4, n = 100) {
   return(matrix(runif(n*(d+1),-1,1), n, d+1))
 }
+
+##############################
+# A cosine symmetric about 0
+dat_unif_cos <- function(d = 4, n = 100) {
+  x <- matrix(runif(n*d,-pi,pi), n, d)
+  y <- cos(x) %*% (2*(0:(d-1)))
+  return(cbind(y,x))
+}
+
+##############################
+# A step function symmetric about 0
+dat_unif_step <- function(d = 4, n = 100) {
+  x <- runif(n,-1,1)
+  x <- matrix(runif(n*d,-1,1), n, d)
+  y <- (-0.5 < x & x < 0.5) %*% (2*(0:(d-1)))
+  return(cbind(y,x))
+}
+
