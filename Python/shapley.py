@@ -67,6 +67,7 @@ def nice_axes(ax):
     ax.xaxis.grid(False)
     return ax
 
+#TODO:less faint
 def violinplot(values, positions, labels=None, multi=True):
     if not multi:
         assert len(values)==len(positions)
@@ -92,10 +93,15 @@ def violinplot(values, positions, labels=None, multi=True):
             if labels is not None:
                 ax.plot([0], linestyle='-', label=labels[_n], c=_col)
 
-            _vplot["cmeans"].set_color(_col)
-            [_vplot["bodies"][_p].set_edgecolor(_col) for _p in positions]
-            [_vplot["bodies"][_p].set_facecolor(_col) for _p in positions]
-        ax.set_xticks([_p+1 for _p in new_positions])
+            _vplot["cmeans"].set_color("black")
+            #[_vplot["bodies"][_p].set_edgecolor(_col) for _p in positions]
+            #[_vplot["bodies"][_p].set_facecolor(_col) for _p in positions]
+            for _pc in _vplot['bodies']:
+                _pc.set_facecolor(_col)
+                _pc.set_edgecolor("black")
+                _pc.set_alpha(0.8)
+
+        ax.set_xticks([_p+1.5 for _p in new_positions])
         ax.set_xticklabels([str(_p+1) for _p in positions])
         plt.legend(loc="lower right")
         plt.ylim([-2, 2])
@@ -140,7 +146,7 @@ def boxplot(values, positions, labels=None, multi=True):
                 ax.plot([0], linestyle='-', label=labels[_n], c=_col)
 
             [_bplot["boxes"][_p].set_facecolor(_col) for _p in positions]
-        ax.set_xticks([_p+1 for _p in new_positions])
+        ax.set_xticks([_p+1.5 for _p in new_positions])
         ax.set_xticklabels([str(_p+1) for _p in positions])
         plt.legend()
         plt.ylabel("Normalised Shapley value")
@@ -175,34 +181,34 @@ if __name__ == "__main__":
     #CF_NAME = "aidc"
     CF_NAME = "xgb"
 
-    N_SAMPLES = 100
+    N_SAMPLES = 1000
     N_FEATS = 5
 
     DATA_DIR = "numpy_data"
     if not os.path.isdir(DATA_DIR):
         os.makedirs(DATA_DIR)
 
-    N_ITER = 10
+    N_ITER = 1000
     PLAYERS = list(range(N_FEATS))
     COLORS = ["orange", "blue", "green", "purple"]
 
     # --- Plot shapley decomposition per player for one cf:
-    all_shaps = calc_n_shapley_values(N_ITER, CF_NAME)
+    #all_shaps = calc_n_shapley_values(N_ITER, CF_NAME)
     # --- Non-normalised:
-    shaps_per_player = [numpy.array(all_shaps)[:,_player] for _player in PLAYERS]
-    violinplot(shaps_per_player, PLAYERS, multi=False)
-    boxplot(shaps_per_player, PLAYERS, multi=False)
+    #shaps_per_player = [numpy.array(all_shaps)[:,_player] for _player in PLAYERS]
+    #violinplot(shaps_per_player, PLAYERS, multi=False)
+    #boxplot(shaps_per_player, PLAYERS, multi=False)
     # --- Normalised:
     #shaps_per_player = [normalise(numpy.array(all_shaps))[:,_player] for _player in PLAYERS]
     #boxplot(shaps_per_player, PLAYERS, multi=False)
     #violinplot(shaps_per_player, PLAYERS, multi=False)
     #plt.title(CF_DICT.get(CF_NAME, CF_NAME))
-    plt.show()
-    sys.exit()
+    #plt.show()
+    #sys.exit()
     # ---
 
     # --- Plot shapley decompositions for all cfs per player
-    cfs = ["r2", "dcor", "aidc", "hsic"]
+    cfs = ["r2", "hsic", "dcor", "aidc"]
     all_cf_shaps_per_player = []
     for _cf in cfs:
         _all_player_shaps = []

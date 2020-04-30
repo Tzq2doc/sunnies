@@ -8,7 +8,6 @@ from sklearn.metrics import accuracy_score, mean_squared_error
 import numpy
 import matplotlib.pyplot as plt
 import shapley as shapley
-from shapley import nice_axes
 import shap
 
 def make_xgb_dict(x, y):
@@ -59,16 +58,16 @@ def display_predictions(y_test, y_pred):
 
 
 def display_feature_importances(model):
+    plot_importance(model)
+
     feature_importance = model.feature_importances_
 
     print("Feature importances:")
     for _n, _imp in enumerate(feature_importance):
         print("Feature {0}: {1}".format(_n, _imp))
 
-    plot_importance(model)
-
     fig, ax = plt.subplots()
-    ax = nice_axes(ax)
+    ax = shapley.nice_axes(ax)
 
     plt.bar(range(len(feature_importance)), feature_importance)
     plt.show()
@@ -77,7 +76,7 @@ def display_residuals_shapley(x, residuals, cf="dcor"):
     d = x.shape[1]
     shapley_values_residuals = shapley.calc_shapley_values(x, residuals, list(range(d)), cf)
     fig, ax = plt.subplots()
-    ax = nice_axes(ax)
+    ax = shapley.nice_axes(ax)
 
     plt.bar(range(len(shapley_values_residuals)), shapley_values_residuals, color="red",
             alpha=0.5)
@@ -104,7 +103,7 @@ if __name__ == "__main__":
 
     # --- Data with independent quadratic features
     D = 5
-    N = 100
+    N = 1000
     #X = numpy.array([numpy.linspace(-1, 1, N) for _ in range(D)]).T
     X = numpy.array([numpy.random.uniform(-1, 1, N) for _ in range(D)]).T
     TWO_D = 2 * numpy.array(range(D))
@@ -117,7 +116,7 @@ if __name__ == "__main__":
     #X = numpy.array([numpy.random.uniform(-1, 1, N) for _ in range(D + 1)]).T
     #Y, X = X[:, 0], X[:, 1:]
     ## ---
-    #
+
     # --- Data with high correlations
     #D = 5
     #N = 1000
@@ -145,7 +144,7 @@ if __name__ == "__main__":
     # ---
 
     #display_predictions(y_test, y_pred)
-    #display_feature_importances(model)
+    display_feature_importances(model)
     #display_shapley()
     #display_shap(X_test, model)
     #display_residuals_shapley(X_test, residuals)
