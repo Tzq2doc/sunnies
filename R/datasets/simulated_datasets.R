@@ -1,8 +1,8 @@
 ##############################
 # y = 0*X_1^2 + 2*X_2^2 + ... + (d-1)X_d^2 where X_i ~ unif(-1,1) 
-dat_unif_squared <- function(d = 4, n = 100) {
+dat_unif_squared <- function(d = 4, n = 100, A = (2*(0:(d-1)))) {
   X <- matrix(runif(n*d,-1,1), n, d)
-  y <- X^2 %*% (2*(0:(d-1)))
+  y <- X^2 %*% A
   return(cbind(y,X))
 }
 
@@ -50,3 +50,12 @@ dat_unif_step <- function(d = 4, n = 100) {
   return(cbind(y,x))
 }
 
+###############################
+# An XOR-like thing with continuity
+dat_unif_XORlike <- function(n = 100) {
+  x1 <- runif(n,-1,1)
+  x2 <- runif(n,-1,1)
+  y <- x1*(x1 > 0 & x2 < 0) + x2*(x1 < 0 & x2 > 0) +
+       x1*(x1 < 0 & x2 < 0) - x2*(x1 > 0 & x2 > 0)
+  return(cbind(y,x1,x2))
+}
