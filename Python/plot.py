@@ -2,36 +2,119 @@ import matplotlib.pyplot as plt
 import scipy.linalg
 import numpy
 import sys
-from shapley import nice_axes
+from data import make_data_random, make_data_step, make_data_xor
 
-D = 4
-N = 1000
-N_ITER = 5
+COLORS = ["orange", "blue", "green", "purple"]
 
-def make_data(d, n):
-    #x = numpy.array([numpy.linspace(-1, 1, n) for _ in range(d)]).T
-    x = numpy.array([numpy.random.uniform(-1, 1, n) for _ in range(d)]).T
-    two_d = 2*numpy.array(range(d))
-    epsilon = numpy.random.uniform(-0.2,0.2,N)
-    y = numpy.matmul(numpy.multiply(x, x), two_d) + epsilon
+def nice_axes(ax):
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+    ax.spines['bottom'].set_color('#DDDDDD')
+    ax.tick_params(bottom=False, left=False)
+    ax.set_axisbelow(True)
+    ax.yaxis.grid(True, color='#EEEEEE')
+    ax.xaxis.grid(False)
+    return ax
 
-    return x, y
+def violinplot(values, positions, labels=None, multi=True):
+    if not multi:
+        assert len(values)==len(positions)
+    # --- Axis formatting
+    _, ax = plt.subplots()
+    ax = nice_axes(ax)
 
-X, Y = make_data(D, N)
+    if multi:
+        new_positions = [3*_p for _p in positions] # More x-axis space
+        widths = [0.3 for _ in positions]
 
-#corr = []
-#for _ in range(N_ITER):
-#    _x, _y = make_data(D, N)
-#    corr.append([numpy.corrcoef(X[:, _d], Y) for _d in range(D)])
+        for _n, _values in enumerate(values):
+            _col = COLORS[_n]
+            _positions = [1+_p + 0.4*_n for _p in new_positions]
+            _vplot = ax.violinplot(_values,
+                        positions=_positions,
+                        widths=widths,
+                        #quantiles=[[0.05, 0.95] for _ in range(5)],
+                        showextrema=False,
+                        showmeans=True,
+                        )
 
-#fig, ax = plt.subplots()
-#ax.set_title('Hide Outlier Points')
-#ax.boxplot(data, showfliers=False)
-#plt.boxplot(data, showfliers=False)
-#plt.show()
+            if labels is not None:
+                ax.plot([0], linestyle='-', label=labels[_n], c=_col)
 
+            _vplot["cmeans"].set_color("black")
+            #[_vplot["bodies"][_p].set_edgecolor(_col) for _p in positions]
+            #[_vplot["bodies"][_p].set_facecolor(_col) for _p in positions]
+            for _pc in _vplot['bodies']:
+                _pc.set_facecolor(_col)
+                _pc.set_edgecolor("black")
+                _pc.set_alpha(0.8)
 
-def least_squares(x_data, y_data):
+        ax.set_xticks([_p+1.5 for _p in new_positions])
+        ax.set_xticklabels([str(_p+1) for _p in positions])
+        plt.legend(loc="lower right")
+        plt.ylim([-2, 2])
+        plt.ylabel("Normalised Shapley value")
+
+    else:
+        ax.violinplot(values, positions=positions)
+        plt.ylabel("Shapley value")
+
+    plt.xlabel("Feature")
+
+def boxplot(values, positions, labels=None, multi=True):
+    """
+    If values is a list of numbers, you'll get a plot containing one box.
+    If values contains lists of lists of numbers, you'll get a plot containing
+    one box per list.
+    If values is a list of lists which contain numbers and multi=True, you'll
+    get a plot containing one box per sublist and list.
+    """
+    if not multi:
+        assert len(values)==len(positions)
+    # --- Axis formatting
+    _, ax = plt.subplots()
+    ax = nice_axes(ax)
+
+    if multi:
+        new_positions = [2*_p for _p in positions] # More x-axis space
+        widths = [0.1 for _ in positions]
+
+        for _n, _values in enumerate(values):
+            _col = COLORS[_n]
+            _positions = [1+_p + 0.2*_n for _p in new_positions]
+            _bplot = ax.boxplot(_values,
+                        positions=_positions,
+                        showfliers=False,
+                        widths=widths,
+                        patch_artist=True,
+                        medianprops=dict(color="black"),
+                        )
+
+            if labels is not None:
+                ax.plot([0], linestyle='-', label=labels[_n], c=_col)
+
+            [_bplot["boxes"][_p].set_facecolor(_col) for _p in positions]
+        ax.set_xticks([_p+1.5 for _p in new_positions])
+        ax.set_xticklabels([str(_p+1) for _p in positions])
+        plt.legend()
+        plt.ylabel("Normalised Shapley value")
+
+    else:
+        ax.boxplot(values, positions=positions, showfliers=False)
+        plt.ylabel("Shapley value")
+
+    plt.xlabel("Feature")
+    plt.draw()
+
+def barplot_all(xs, values):
+    _, ax = plt.subplots()
+    ax = nice_axes(ax)
+
+    plt.bar(xs, values)
+    plt.draw()
+
+def least_squares_plot(x_data, y_data):
     _, ax = plt.subplots()
     ax = nice_axes(ax)
 
@@ -52,16 +135,46 @@ def least_squares(x_data, y_data):
     ax.tick_params(axis='both', which='major', labelsize=16)
     plt.show()
 
-# -- Plot
-def plot_data():
-    #plt.scatter(X[:,0], Y, label="X0", alpha=0.8)
-    #plt.scatter(X[:,1], Y, label="X1", alpha=0.8)
-    #plt.scatter(X[:,2], Y, label="X2", alpha=0.8)
-    #plt.scatter(X[:,3], Y, label="X3", alpha=0.8)
-    #plt.scatter(X[:,3], X[:,0], label="X3 vs X0", alpha=0.8)
-    plt.legend(loc="upper right")
+def plot_data(X, Y):
+    _, ax = plt.subplots()
+    ax = nice_axes(ax)
+
+    if len(X.shape) == 1:
+        plt.scatter(X, Y, alpha=0.8)
+    else:
+        for _i in range(X.shape[1]):
+            plt.scatter(X[:, _i], Y, label="X{0}".format(_i), alpha=0.8)
+        plt.legend(loc="upper right")
+
+    plt.xlabel("X")
+    plt.ylabel("Y")
+    plt.draw()
+
+if __name__ == "__main__":
+    D = 4
+    N = 1000
+    N_ITER = 5
+
+    #X, Y = make_data_random(D, N)
+    X, Y = make_data_step(D, N)
+    plot_data(X[:,1], Y)
+
+    X1, X2, Y = make_data_xor(N)
+    plot_data(X1, Y)
+
+    #least_squares_plot(X[:,3], Y)
+    # ---
+
+    #corr = []
+    #for _ in range(N_ITER):
+    #    _x, _y = make_data(D, N)
+    #    corr.append([numpy.corrcoef(X[:, _d], Y) for _d in range(D)])
+
+    #fig, ax = plt.subplots()
+    #ax.set_title('Hide Outlier Points')
+    #ax.boxplot(data, showfliers=False)
+    #plt.boxplot(data, showfliers=False)
+
     plt.show()
 
-#plot_data()
-least_squares(X[:,3], Y)
-# ---
+
