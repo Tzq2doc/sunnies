@@ -4,9 +4,15 @@ source("shapley_helpers.R")
 source("datasets/simulated_datasets.R")
 source("simulations.R")
 
+# This is causing an error see output
+yx <- dat_unif_XORlike()
+y <- yx[, 1, drop = F]
+X <- yx[,-1]
+HSIC(y, X)
+CF <- estimate_characteristic_function(X, DC, y = y)
+shapley(CF, 2)
 
 # Shapley is a decomposition, not representing pairwise correlations ------
-
 dat <- dat_unif_squared()
 y <- dat[,1, drop = F]; X <- dat[,-1, drop = F]
 HSIC(y,X)
