@@ -10,6 +10,7 @@ import dcor
 import numpy
 import scipy
 from HSIC import dHSIC
+from xgb_regressor import make_xgb_dict
 
 def AIDC(X, Y):
     cov_y = numpy.cov(Y)
@@ -66,6 +67,9 @@ def make_cf_dict(x, y, players, cf_name):
     cf_dict = {}
     num_players = len(players)
     team_sizes = list(range(num_players+1))
+
+    if cf_name is "xgb":
+        return make_xgb_dict(x, y)
 
     for _size in team_sizes:
         value_s = 0
