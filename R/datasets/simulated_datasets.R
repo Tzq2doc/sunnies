@@ -8,9 +8,9 @@ dat_unif_squared <- function(d = 4, n = 100, A = (2*(0:(d-1)))) {
 
 ##############################
 # This is a modification of dat_unif_squared, where X is non-random
-dat_nonrandom_squared <- function(d = 4, n = 100) {
+dat_nonrandom_squared <- function(d = 4, n = 100, A = (2*(0:(d-1)))) {
   X <- matrix(seq(-1,1,length.out = n*d),n,d)
-  y <- X^2 %*% (2*(0:(d-1)))
+  y <- X^2 %*% A
   return(cbind(y,X))
 }
 
@@ -35,18 +35,18 @@ dat_unif_independent <- function(d = 4, n = 100) {
 
 ##############################
 # A cosine symmetric about 0
-dat_unif_cos <- function(d = 4, n = 100) {
+dat_unif_cos <- function(d = 4, n = 100, A = (2*(0:(d-1)))) {
   x <- matrix(runif(n*d,-pi,pi), n, d)
-  y <- cos(x) %*% (2*(0:(d-1)))
+  y <- cos(x) %*% A
   return(cbind(y,x))
 }
 
 ##############################
 # A step function symmetric about 0
-dat_unif_step <- function(d = 4, n = 100) {
+dat_unif_step <- function(d = 4, n = 100, A = (2*(0:(d-1)))) {
   x <- runif(n,-1,1)
   x <- matrix(runif(n*d,-1,1), n, d)
-  y <- (-0.5 < x & x < 0.5) %*% (2*(0:(d-1)))
+  y <- (-0.5 < x & x < 0.5) %*% A
   return(cbind(y,x))
 }
 
