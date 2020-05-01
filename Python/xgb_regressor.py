@@ -1,6 +1,5 @@
 from typing import Union
 from itertools import combinations
-
 from matplotlib.colors import LinearSegmentedColormap, ListedColormap, Colormap
 from xgboost import XGBRegressor, plot_importance
 from sklearn.model_selection import train_test_split
@@ -58,7 +57,7 @@ def display_predictions(y_test, y_pred):
 
 
 def display_feature_importances(model):
-    plot_importance(model)
+    #plot_importance(model.get_booster())
 
     feature_importance = model.feature_importances_
 
@@ -69,8 +68,15 @@ def display_feature_importances(model):
     fig, ax = plt.subplots()
     ax = shapley.nice_axes(ax)
 
-    plt.bar(range(len(feature_importance)), feature_importance)
-    plt.show()
+    #plt.bar(range(len(feature_importance)), feature_importance)
+    ax.barh(range(len(feature_importance)), feature_importance)
+    ax.set_yticks([_n for _n in range(len(feature_importance))])
+    ax.set_yticklabels(["Feature {0}".format(_n+1) for _n in
+        range(len(feature_importance))])
+    plt.xlabel("Relative feature importance")
+    ax.set_xticklabels([])
+
+    plt.draw()
 
 def display_residuals_shapley(x, residuals, cf="dcor"):
     d = x.shape[1]
@@ -80,7 +86,7 @@ def display_residuals_shapley(x, residuals, cf="dcor"):
 
     plt.bar(range(len(shapley_values_residuals)), shapley_values_residuals, color="red",
             alpha=0.5)
-    plt.show()
+    plt.draw()
 
 def display_shap(x, model):
     # --- SHAP package
@@ -88,7 +94,10 @@ def display_shap(x, model):
     expected_value = explainer.expected_value
     shap_values = explainer.shap_values(x)
 
-    plt.figure()
+    #_, ax = plt.figure()
+    _, ax = plt.subplots()
+    ax = shapley.nice_axes(ax)
+
     shap.summary_plot(shap_values, x, show=False)
 
     # --- Change the colormap
@@ -97,6 +106,11 @@ def display_shap(x, model):
         for fcc in fc.get_children():
             if hasattr(fcc, "set_cmap"):
                 fcc.set_cmap(my_cmap)
+
+    ax.set_yticklabels(["Feature {0}".format(_n+1) for _n in
+        range(len(ax.get_yticks()))])
+    plt.draw()
+
 
 if __name__ == "__main__":
 
@@ -144,7 +158,9 @@ if __name__ == "__main__":
     # ---
 
     #display_predictions(y_test, y_pred)
-    display_feature_importances(model)
+    #display_feature_importances(model)
     #display_shapley()
-    #display_shap(X_test, model)
+    display_shap(X_test, model)
     #display_residuals_shapley(X_test, residuals)
+
+    plt.show()
