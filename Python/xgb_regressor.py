@@ -134,7 +134,7 @@ if __name__ == "__main__":
     #X, Y = data.make_data_random(D, N)
     #X, Y = data.make_data_harmonic(D, N)
     X, Y = data.make_data_step(D, N)
-    # Doesnt work yet X, Y = data.make_data_xor(N)
+    #FIx dcor for this bastard  X, Y = data.make_data_xor(D, N)
     # ---
 
     ## --- Data with no relationship
