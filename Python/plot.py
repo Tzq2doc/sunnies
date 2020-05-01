@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import scipy.linalg
 import numpy
 import sys
-from data import make_data_random, make_data_step, make_data_xor
+import data
 
 COLORS = ["orange", "blue", "green", "purple"]
 
@@ -155,13 +155,18 @@ if __name__ == "__main__":
     N = 1000
     N_ITER = 5
 
-    #X, Y = make_data_random(D, N)
-    X, Y = make_data_step(D, N)
+    #X, Y = data.make_data_random(D, N)
+
+    #X, Y = data.make_data_step(D, N)
+    #plot_data(X[:,1], Y)
+
+    #X1, X2, Y = data.make_data_xor(N)
+    #plot_data(X1, Y)
+
+    X, Y = data.make_data_harmonic(D, N)
     plot_data(X[:,1], Y)
 
-    X1, X2, Y = make_data_xor(N)
-    plot_data(X1, Y)
-
+    # ---
     #least_squares_plot(X[:,3], Y)
     # ---
 

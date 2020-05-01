@@ -6,8 +6,12 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, mean_squared_error
 import numpy
 import matplotlib.pyplot as plt
-import shapley as shapley
 import shap
+
+# --- My stuff
+import data
+import shapley
+from plot import nice_axes
 
 def make_xgb_dict(x, y):
     rmse_dict = {}
@@ -40,9 +44,10 @@ def display_shapley(cf="dcor"):
     shapley_values_actual = shapley.calc_shapley_values(X_test, y_test, list(range(D)), cf)
     shapley_values_xgb = shapley.calc_shapley_values(X_test, y_pred, list(range(D)), cf)
 
-    fig, ax = plt.subplots()
+    _, ax = plt.subplots()
     ax = nice_axes(ax)
 
+    plt.title(r"Shapley decomposition of {0} on $X$ with true vs predicted $Y$".format(cf))
     plt.bar(range(len(shapley_values_actual)), shapley_values_actual, color="red",
             alpha=0.5, label="True")
     plt.bar(range(len(shapley_values_xgb)), shapley_values_xgb, color="blue",
@@ -52,7 +57,11 @@ def display_shapley(cf="dcor"):
 
 
 def display_predictions(y_test, y_pred):
+    _, ax = plt.subplots()
+    ax = nice_axes(ax)
     plt.scatter(y_test, y_pred)
+    plt.xlabel("Y true")
+    plt.ylabel("Y predicted")
     plt.show()
 
 
@@ -81,11 +90,15 @@ def display_feature_importances(model):
 def display_residuals_shapley(x, residuals, cf="dcor"):
     d = x.shape[1]
     shapley_values_residuals = shapley.calc_shapley_values(x, residuals, list(range(d)), cf)
-    fig, ax = plt.subplots()
+
+    _, ax = plt.subplots()
     ax = shapley.nice_axes(ax)
 
     plt.bar(range(len(shapley_values_residuals)), shapley_values_residuals, color="red",
             alpha=0.5)
+
+    plt.title(r"Shapley decomposition of {0} on $X$ with the residuals (true-predicted $Y$)".format(cf))
+
     plt.draw()
 
 def display_shap(x, model):
@@ -115,13 +128,13 @@ def display_shap(x, model):
 if __name__ == "__main__":
 
 
-    # --- Data with independent quadratic features
+    # --- Make data
     D = 5
     N = 1000
-    #X = numpy.array([numpy.linspace(-1, 1, N) for _ in range(D)]).T
-    X = numpy.array([numpy.random.uniform(-1, 1, N) for _ in range(D)]).T
-    TWO_D = 2 * numpy.array(range(D))
-    Y = numpy.matmul(numpy.multiply(X, X), TWO_D)
+    #X, Y = data.make_data_random(D, N)
+    #X, Y = data.make_data_harmonic(D, N)
+    X, Y = data.make_data_step(D, N)
+    # Doesnt work yet X, Y = data.make_data_xor(N)
     # ---
 
     ## --- Data with no relationship
@@ -157,10 +170,10 @@ if __name__ == "__main__":
     #print("Saved file {0}.npy".format(filename))
     # ---
 
-    #display_predictions(y_test, y_pred)
-    #display_feature_importances(model)
-    #display_shapley()
+    display_predictions(y_test, y_pred)
+    display_feature_importances(model)
+    display_shapley()
     display_shap(X_test, model)
-    #display_residuals_shapley(X_test, residuals)
+    display_residuals_shapley(X_test, residuals)
 
     plt.show()
