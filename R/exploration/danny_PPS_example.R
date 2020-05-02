@@ -4,12 +4,6 @@ source("shapley_helpers.R")
 source("datasets/simulated_datasets.R")
 source("simulations.R")
 
-library(reticulate)
-#use_python("C:/Users/Doony/Anaconda3/envs/r-tensorflow/python.exe")
-use_python("C:/Users/Doony/.julia/conda/3/python.exe")
-#use_condaenv("r-tensorflow")
-library(keras)
-library(xgboost)
 
 
 library(tree)
