@@ -160,11 +160,16 @@ if __name__ == "__main__":
     #X, Y = data.make_data_step(D, N)
     #plot_data(X[:,1], Y)
 
-    #X1, X2, Y = data.make_data_xor(N)
-    #plot_data(X1, Y)
-
-    X, Y = data.make_data_harmonic(D, N)
+    X, Y = data.make_data_xor(2, N)
+    plot_data(X[:,0], Y)
     plot_data(X[:,1], Y)
+
+    #plt.scatter(X[Y==1, 0], X[Y==1, 1], c='b', marker='x', label='1')
+    #plt.scatter(X[Y==-1, 0], X[Y==-1, 1], c='r', marker='s', label='-1')
+    #plt.show()
+
+    #X, Y = data.make_data_harmonic(D, N)
+    #plot_data(X[:,1], Y)
 
     # ---
     #least_squares_plot(X[:,3], Y)

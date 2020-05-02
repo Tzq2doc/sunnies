@@ -11,7 +11,10 @@ import dcor
 import sys
 import os
 import matplotlib.pyplot as plt
+
+# --- My stuff
 from plot import nice_axes, violinplot, boxplot, barplot_all
+import data
 
 CF_DICT = {
         "r2" : r"$R^2$",
@@ -43,9 +46,8 @@ def calc_n_shapley_values(n_iter, cf_name, overwrite=False):
 
     all_shaps = []
     for _i in range(n_iter):
-        #x = numpy.array([numpy.linspace(-1, 1, N_SAMPLES) for _ in range(N_FEATS)]).T
-        x = numpy.array([numpy.random.uniform(-1, 1, N_SAMPLES) for _ in range(N_FEATS)]).T
-        y = numpy.matmul(numpy.multiply(x, x), 2*numpy.array(range(N_FEATS)))
+        x, y = data.make_data_step(N_FEATS, N_SAMPLES)
+        #x, y = data.make_data_random(N_FEATS, N_SAMPLES)
 
         _shapley_values = calc_shapley_values(x, y, PLAYERS, cf_name)
         all_shaps.append(_shapley_values)
@@ -63,18 +65,25 @@ if __name__ == "__main__":
     #CF_NAME = "hsic"
     #CF_NAME = "dcor"
     #CF_NAME = "r2"
-    #CF_NAME = "aidc"
-    CF_NAME = "xgb"
+    CF_NAME = "aidc"
+    #CF_NAME = "xgb"
 
     N_SAMPLES = 1000
     N_FEATS = 5
-
-    DATA_DIR = "numpy_data"
-    if not os.path.isdir(DATA_DIR):
-        os.makedirs(DATA_DIR)
-
     N_ITER = 1000
     PLAYERS = list(range(N_FEATS))
+
+
+    # --- Pick one data generating process
+    DATA_TYPE = "step" #ok
+    #DATA_TYPE = "random" #ok
+    #DATA_TYPE = "harmonic" #test
+    #DATA_TYPE = "xor" #fix
+    # ---
+
+    DATA_DIR = os.path.join("result_data", "{0}".format(DATA_TYPE))
+    if not os.path.isdir(DATA_DIR):
+        os.makedirs(DATA_DIR)
 
     # --- Plot shapley decomposition per player for one cf:
     #all_shaps = calc_n_shapley_values(N_ITER, CF_NAME)
@@ -115,14 +124,10 @@ if __name__ == "__main__":
     #barplot_all(PLAYERS, SHAPS_AVG)
     # ---
 
-    #TODO: Save result to cleverly named file. Column headers with cf names
-
     try:
         plt.show()
     except Exception:
         pass
-    sys.exit()
-
 
 
 # NOTES

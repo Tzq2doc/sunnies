@@ -38,6 +38,7 @@ def CF(x, y, team, cf_name):
         return 0.0
 
     if cf_name is "dcor":
+        print(x.shape)
         return dcor.distance_correlation(y, x)
 
     elif cf_name is "r2":
@@ -100,6 +101,7 @@ def calc_shap(x, y, v, cf_dict):
         for _team in teams_of_size_s:
             #value_in_team = cf(x, y, _team + v_tuple) - cf(x, y, _team)
             value_in_team = (cf_dict[tuple(sorted(_team+v_tuple))] - cf_dict[_team])
+
             #this sometimes gets negative when using cf=r^2
             #print(value_in_team)
             value_s += value_in_team
