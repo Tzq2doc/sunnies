@@ -8,17 +8,23 @@ source("datasets/simulated_datasets.R")
 # d: number of features (used 4 for saved data)
 # N: number of iterations simulating data (used 1000 for saved data)
 # data_gen: the data generating function
-#### Call shapley_sim1 N times with each dependence measure and
+# overwrite: whether to overwrite file if it exists (TRUE). 
+#            Ignored if loc_only = T or save = F
+# loc_only: whether to only return the generated 
+#           file name and not to run sim (TRUE)
+# save: whether to save the results (TRUE) or just return the results (FALSE)
+#
+#### Calls shapley_sim1 N times with each dependence measure and
 # saves the results with a standard naming convention that captures
 # the parameter values.
 # Returns a character vector representing the saved file location.
-shapley_sim1_N <- function(n, d, N, data_gen, overwrite = F, loc_only = F) {
+shapley_sim1_N <- function(n, d, N, data_gen, overwrite = F, loc_only = F, save = T) {
   # Directory and file string part
   fun_name <- as.character(substitute(data_gen))
   dir <- "results/"
   loc <- paste0(dir, "sim1_n",n,"_N",N,"_d",d,"_", fun_name,".Rds")
   if (loc_only) return(loc)
-  if (!overwrite && file.exists(loc)) {
+  if (save && !overwrite && file.exists(loc)) {
     stop("file exists, perhaps choose overwrite = T")}
   # Simulation part
   results <- list()
@@ -28,8 +34,12 @@ shapley_sim1_N <- function(n, d, N, data_gen, overwrite = F, loc_only = F) {
       get(utilities[i]), N, n , d, data_gen)
   }
   # Save and return part
-  saveRDS(results, loc)
-  return(loc)
+  if (save) {
+    saveRDS(results, loc)
+    return(loc)
+  } else {
+    return(results) 
+  }
 }
 
 
@@ -47,7 +57,7 @@ shapley_sim1 <- function(utility, N, n, d, data_gen, ...) {
     dat <- data_gen(d, n, ...)
     y <- dat[,1, drop=F]; X <- dat[,-1, drop=F]
     CF_i <- estimate_characteristic_function(X, utility, y = y)
-    results[i,] <- shapley_(CF_i, 1:d)
+    results[i,] <- shapley(CF = CF_i)
   }
   results
 }
