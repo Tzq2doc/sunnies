@@ -1,6 +1,3 @@
-
-
-
 ## Parameters
 # y: Response vector y or, if X is missing, then matrix cbind(y,X). 
 #    Coerced if y is not a matrix. Ignored if CF is specified.
@@ -26,9 +23,6 @@ shapley <- function(y, X, utility, v, CF) {
   if (missing(v)) {v <- 1:ncol(X)}
   return(shapley_vec(CF, v))
 }
-
-shapley_vec <- Vectorize(shapley_v, "v")
-
 
 # We don't know the population characteristic function,
 # so we use the utility function to estimate the 
@@ -79,6 +73,8 @@ shapley_v <- function(CF, v) {
   average_value <- value/length(team_sizes)
   return(average_value)
 }
+
+shapley_vec <- Vectorize(shapley_v, "v")
 
 # This function converts teams into strings so we can look
 # them up in the characteristic function, a bit like a dictionary.
