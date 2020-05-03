@@ -1,3 +1,15 @@
+## Data set list
+# dat_continuous_XOR
+# dat_unif_squared
+# dat_nonrandom_squared
+# dat_unif_squared_corr
+# dat_unif_independent
+# dat_unif_cos
+# dat_unif_step
+# dat_unif_XORlike
+# dat_categorical_XOR
+# dat_continuous_XOR
+
 ##############################
 # y = 0*X_1^2 + 2*X_2^2 + ... + (d-1)X_d^2 where X_i ~ unif(-1,1) 
 dat_unif_squared <- function(d = 4, n = 100, A = (2*(0:(d-1)))) {
@@ -57,5 +69,24 @@ dat_unif_XORlike <- function(n = 100) {
   x2 <- runif(n,-1,1)
   y <- x1*(x1 > 0 & x2 < 0) + x2*(x1 < 0 & x2 > 0) +
        x1*(x1 < 0 & x2 < 0) - x2*(x1 > 0 & x2 > 0)
+  return(cbind(y,x1,x2))
+}
+
+###############################
+# Categorical XOR
+dat_categorical_XOR <- function(n = 1e3) {
+  x1 <- sample(c(rep(0,floor(n/2)),rep(1,floor(n/2))), n)
+  x2 <- sample(c(rep(0,floor(n/2)),rep(1,floor(n/2))), n)
+  y  <- as.integer(xor(x1,x2))
+  return(cbind(y,x1,x2))
+}
+
+###############################
+# Continuous XOR
+dat_continuous_XOR <- function(n = 1e3) {
+  x1 <- runif(n, -1, 1)
+  x2 <- runif(n, -1, 1)
+  y  <- as.integer(xor(x1 > 0, x2 > 0))
+  #plot(x1,x2, col = y + 1, main = "XOR")
   return(cbind(y,x1,x2))
 }
