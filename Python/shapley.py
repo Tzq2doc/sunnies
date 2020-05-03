@@ -46,7 +46,7 @@ def calc_n_shapley_values(n_iter, cf_name, overwrite=False):
 
     all_shaps = []
     for _i in range(n_iter):
-        x, y = data.make_data_step(N_FEATS, N_SAMPLES)
+        x, y = data.make_data(N_FEATS, N_SAMPLES, data_type)
         #x, y = data.make_data_random(N_FEATS, N_SAMPLES)
 
         _shapley_values = calc_shapley_values(x, y, PLAYERS, cf_name)
@@ -70,7 +70,7 @@ if __name__ == "__main__":
 
     N_SAMPLES = 1000
     N_FEATS = 5
-    N_ITER = 1000
+    N_ITER = 100
     PLAYERS = list(range(N_FEATS))
 
 
@@ -78,7 +78,7 @@ if __name__ == "__main__":
     #DATA_TYPE = "step" #ok
     #DATA_TYPE = "random" #ok
     #DATA_TYPE = "harmonic" #ok
-    DATA_TYPE = "xor" #fix
+    DATA_TYPE = "xor" #f?
     # ---
 
     DATA_DIR = os.path.join("result_data", "{0}".format(DATA_TYPE))

@@ -62,3 +62,18 @@ def make_data_harmonic(d, n):
     y = numpy.matmul(scipy.cos(x), two_d)
 
     return x, y
+
+def make_data(d, n, data_type):
+    if data_type is "step":
+        return make_data_step(d, n)
+
+    elif data_type is "harmonic":
+        return make_data_harmonic(d, n)
+    elif data_type is random:
+        return make_data_random(d, n)
+    elif data_type is xor:
+        return make_data_xor(d, n)
+
+    print("Data type {0} is not implemented".format(data_type))
+    sys.exit()
+
