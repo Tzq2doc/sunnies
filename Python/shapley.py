@@ -75,10 +75,10 @@ if __name__ == "__main__":
 
 
     # --- Pick one data generating process
-    DATA_TYPE = "step" #ok
+    #DATA_TYPE = "step" #ok
     #DATA_TYPE = "random" #ok
-    #DATA_TYPE = "harmonic" #test
-    #DATA_TYPE = "xor" #fix
+    #DATA_TYPE = "harmonic" #ok
+    DATA_TYPE = "xor" #fix
     # ---
 
     DATA_DIR = os.path.join("result_data", "{0}".format(DATA_TYPE))
@@ -113,6 +113,7 @@ if __name__ == "__main__":
         # --- Non-normalized:
         #all_cf_shaps_per_player.append([numpy.array(_cf_shaps)[:,_player] for _player in PLAYERS])
         # ---
+        print("Done with {0}.".format(_cf))
     # ---
 
     cf_labels = [CF_DICT.get(_cf, 0) for _cf in cfs]
