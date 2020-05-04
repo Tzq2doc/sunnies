@@ -38,7 +38,6 @@ def CF(x, y, team, cf_name):
         return 0.0
 
     if cf_name is "dcor":
-        print(x.shape)
         return dcor.distance_correlation(y, x)
 
     elif cf_name is "r2":

@@ -46,7 +46,7 @@ def calc_n_shapley_values(n_iter, cf_name, overwrite=False):
 
     all_shaps = []
     for _i in range(n_iter):
-        x, y = data.make_data_step(N_FEATS, N_SAMPLES)
+        x, y = data.make_data(N_FEATS, N_SAMPLES, DATA_TYPE)
         #x, y = data.make_data_random(N_FEATS, N_SAMPLES)
 
         _shapley_values = calc_shapley_values(x, y, PLAYERS, cf_name)
@@ -65,20 +65,20 @@ if __name__ == "__main__":
     #CF_NAME = "hsic"
     #CF_NAME = "dcor"
     #CF_NAME = "r2"
-    CF_NAME = "aidc"
+    #CF_NAME = "aidc"
     #CF_NAME = "xgb"
 
     N_SAMPLES = 1000
-    N_FEATS = 5
+    N_FEATS = 2#5
     N_ITER = 1000
     PLAYERS = list(range(N_FEATS))
 
 
     # --- Pick one data generating process
-    DATA_TYPE = "step" #ok
+    #DATA_TYPE = "step" #ok
     #DATA_TYPE = "random" #ok
-    #DATA_TYPE = "harmonic" #test
-    #DATA_TYPE = "xor" #fix
+    DATA_TYPE = "harmonic" #ok
+    #DATA_TYPE = "xor" #ok
     # ---
 
     DATA_DIR = os.path.join("result_data", "{0}".format(DATA_TYPE))
@@ -113,6 +113,7 @@ if __name__ == "__main__":
         # --- Non-normalized:
         #all_cf_shaps_per_player.append([numpy.array(_cf_shaps)[:,_player] for _player in PLAYERS])
         # ---
+        print("Done with {0}.".format(_cf))
     # ---
 
     cf_labels = [CF_DICT.get(_cf, 0) for _cf in cfs]

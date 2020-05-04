@@ -1,3 +1,4 @@
+import sys
 from typing import Union
 from itertools import combinations
 from matplotlib.colors import LinearSegmentedColormap, ListedColormap, Colormap
@@ -131,10 +132,14 @@ if __name__ == "__main__":
     # --- Make data
     D = 5
     N = 1000
-    #X, Y = data.make_data_random(D, N)
+    X, Y = data.make_data_random(D, N)
+    print(X.shape)
     #X, Y = data.make_data_harmonic(D, N)
-    X, Y = data.make_data_step(D, N)
-    #FIx dcor for this bastard  X, Y = data.make_data_xor(D, N)
+    #X, Y = data.make_data_step(D, N)
+    D = 2
+    X, Y = data.make_data_xor(D, N)
+    print(X.shape)
+    #sys.exit()
     # ---
 
     ## --- Data with no relationship
@@ -173,7 +178,7 @@ if __name__ == "__main__":
     display_predictions(y_test, y_pred)
     display_feature_importances(model)
     display_shapley()
-    display_shap(X_test, model)
-    display_residuals_shapley(X_test, residuals)
+    #display_shap(X_test, model)
+    #display_residuals_shapley(X_test, residuals)
 
     plt.show()

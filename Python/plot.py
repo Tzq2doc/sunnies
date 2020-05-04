@@ -53,7 +53,8 @@ def violinplot(values, positions, labels=None, multi=True):
         ax.set_xticks([_p+1.5 for _p in new_positions])
         ax.set_xticklabels([str(_p+1) for _p in positions])
         plt.legend(loc="lower right")
-        plt.ylim([-2, 2])
+        plt.legend(loc="upper right")
+        #plt.ylim([-2, 2])
         plt.ylabel("Normalised Shapley value")
 
     else:
