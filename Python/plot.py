@@ -43,8 +43,6 @@ def violinplot(values, positions, labels=None, multi=True):
                 ax.plot([0], linestyle='-', label=labels[_n], c=_col)
 
             _vplot["cmeans"].set_color("black")
-            #[_vplot["bodies"][_p].set_edgecolor(_col) for _p in positions]
-            #[_vplot["bodies"][_p].set_facecolor(_col) for _p in positions]
             for _pc in _vplot['bodies']:
                 _pc.set_facecolor(_col)
                 _pc.set_edgecolor("black")
@@ -53,8 +51,8 @@ def violinplot(values, positions, labels=None, multi=True):
         ax.set_xticks([_p+1.5 for _p in new_positions])
         ax.set_xticklabels([str(_p+1) for _p in positions])
         plt.legend(loc="lower right")
-        plt.legend(loc="upper right")
-        #plt.ylim([-2, 2])
+        #plt.legend(loc="upper right")
+        plt.ylim([-2, 2])
         plt.ylabel("Normalised Shapley value")
 
     else:
