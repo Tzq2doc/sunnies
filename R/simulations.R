@@ -1,13 +1,16 @@
 source("datasets/simulated_datasets.R")
 source("simulation_helpers.R")
 
-
-
 # Singleton simulations ---------------------------------------------------
 
-singletons_sim_N(n=1000, d=4, N=1000, dat_unif_squared)
+loc <- singletons_sim_N(n=1000, d=21, N=1000, dat_unif_squared, A = (0:20)^2)
+results <- readRDS(loc)
 
-
+boxplot(results$R2, outline = F)
+boxplot(results$HSIC, outline = F)
+boxplot(results$DC, outline = F)
+boxplot(results$BCDC, outline = F)
+boxplot(results$AIDC, outline = F)
 
 
 # Shapley simulations sim1 ------------------------------------------------
