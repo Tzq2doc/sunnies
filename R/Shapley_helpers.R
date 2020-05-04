@@ -10,8 +10,8 @@ shapley <- function(y, X, utility, v, CF) {
   if (!missing(CF)) {
     if (missing(v)) {
       v <- attr(CF,"players")
-      return(shapley_vec(CF, v))
     }
+    return(shapley_vec(CF, v))
   }
   if ( !is.matrix(y) ) {y <- as.matrix(y)}
   if ( ncol(y) > 1 & missing(X) ) {
