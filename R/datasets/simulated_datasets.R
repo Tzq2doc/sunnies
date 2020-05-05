@@ -63,8 +63,9 @@ dat_unif_step <- function(d = 4, n = 100, A = (2*(0:(d-1)))) {
 }
 
 ###############################
-# An XOR-like thing with continuity
-dat_unif_XORlike <- function(n = 100) {
+# An XOR-like thing with continuity,
+# Continuous features with continuous labels
+dat_concon_XOR <- function(n = 100) {
   x1 <- runif(n,-1,1)
   x2 <- runif(n,-1,1)
   y <- x1*(x1 > 0 & x2 < 0) + x2*(x1 < 0 & x2 > 0) +
@@ -73,8 +74,8 @@ dat_unif_XORlike <- function(n = 100) {
 }
 
 ###############################
-# Categorical XOR
-dat_categorical_XOR <- function(n = 1e3) {
+# Discrete features with discrete labels XOR
+dat_catcat_XOR <- function(n = 1e3) {
   x1 <- sample(c(rep(0,floor(n/2)),rep(1,floor(n/2))), n)
   x2 <- sample(c(rep(0,floor(n/2)),rep(1,floor(n/2))), n)
   y  <- as.integer(xor(x1,x2))
@@ -82,11 +83,28 @@ dat_categorical_XOR <- function(n = 1e3) {
 }
 
 ###############################
-# Continuous XOR
-dat_continuous_XOR <- function(n = 1e3) {
+# Continuous features with discrete labels XOR
+dat_concat_XOR <- function(n = 1e3) {
   x1 <- runif(n, -1, 1)
   x2 <- runif(n, -1, 1)
   y  <- as.integer(xor(x1 > 0, x2 > 0))
   #plot(x1,x2, col = y + 1, main = "XOR")
   return(cbind(y,x1,x2))
 }
+
+
+#dat_variable_normal <- function(n = 1e3, d = 4, sd_vec = 1:d) {
+#  X <- matrix(0, nrow = n, ncol = d)
+#  Y <- vector(mode = "numeric", length = n)
+#  for (i in 1:d) {
+#    X[,i] <- rnorm(n, mean = 0, sd = sd_vec[i]) 
+#  }
+#  Y <- rowSums(X^2)
+#  return(cbind(Y, X^2))
+#}
+#
+#X <- dat_variable_normal()
+#rowSums(X)
+#
+#YX <- dat_variable_normal()
+#plot(YX[,1], YX[,2])

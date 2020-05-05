@@ -1,63 +1,44 @@
-source("old/old_shapley_helpers.R")
-source("utility_functions.R")
-source("shapley_helpers.R")
 source("datasets/simulated_datasets.R")
+source("simulation_helpers.R")
 
-### Parameter names
-# n: sample size (used 1000 for saved data)
-# d: number of features (used 4 for saved data)
-# N: number of iterations simulating data (used 1000 for saved data)
-# data_gen: the data generating function
-# overwrite: whether to overwrite file if it exists (TRUE). 
-#            Ignored if loc_only = T or save = F
-# loc_only: whether to only return the generated 
-#           file name and not to run sim (TRUE)
-# save: whether to save the results (TRUE) or just return the results (FALSE)
-#
-#### Calls shapley_sim1 N times with each dependence measure and
-# saves the results with a standard naming convention that captures
-# the parameter values.
-# Returns a character vector representing the saved file location.
-shapley_sim1_N <- function(n, d, N, data_gen, overwrite = F, loc_only = F, save = T) {
-  # Directory and file string part
-  fun_name <- as.character(substitute(data_gen))
-  dir <- "results/"
-  loc <- paste0(dir, "sim1_n",n,"_N",N,"_d",d,"_", fun_name,".Rds")
-  if (loc_only) return(loc)
-  if (save && !overwrite && file.exists(loc)) {
-    stop("file exists, perhaps choose overwrite = T")}
-  # Simulation part
-  results <- list()
-  utilities <- c("R2","DC","BCDC","AIDC","HSIC")
-  for (i in 1:length(utilities)) {
-    results[[utilities[i]]] <- shapley_sim1(
-      get(utilities[i]), N, n , d, data_gen)
-  }
-  # Save and return part
-  if (save) {
-    saveRDS(results, loc)
-    return(loc)
-  } else {
-    return(results) 
-  }
-}
+# Singleton simulations ---------------------------------------------------
+
+loc <- singletons_sim_N(n=1000, d=21, N=1000, dat_unif_squared, A = (0:20)^2)
+results <- readRDS(loc)
+
+boxplot(results$R2, outline = F)
+boxplot(results$HSIC, outline = F)
+boxplot(results$DC, outline = F)
+boxplot(results$BCDC, outline = F)
+boxplot(results$AIDC, outline = F)
 
 
-### shapley_sim1 calls the shapley function for N
-# samples of the simulated data given by data_gen
-## Parameter names
-# n:        sample size
-# d:        number of features
-# N:        number of samples
-# data_gen: a data generating function (see simulated_datasets.R)
-# ... :     arguments passed to data_gen
-shapley_sim1 <- function(utility, N, n, d, data_gen, ...) {
-  results <- matrix(0, nrow = N, ncol = d)
-  for ( i in 1:N ) {
-    dat <- data_gen(d, n, ...)
-    y <- dat[,1, drop=F]; X <- dat[,-1, drop=F]
-    CF_i <- estimate_characteristic_function(X, utility, y = y)
-    results[i,] <- shapley(CF = CF_i)
-  }
-  results
-}
+# Shapley simulations sim1 ------------------------------------------------
+
+loc1 <- shapley_sim1_N(n=1000, d=4, N=1000, dat_unif_squared, loc_only = T)
+loc2 <- shapley_sim1_N(n=100,  d=4, N=100,  dat_unif_squared, loc_only = T)
+loc3 <- shapley_sim1_N(n=10,   d=4, N=100,  dat_unif_squared, loc_only = T)
+loc4 <- shapley_sim1_N(n=100,  d=5, N=100,  dat_unif_squared, loc_only = T)
+loc5 <- shapley_sim1_N(n=100,  d=3, N=100,  dat_unif_squared)
+
+
+# feature means of simulations results ------------------------------------
+
+#results <- readRDS(loc1)
+results <- readRDS(loc4)
+
+res_means <- lapply(results, function(r) {apply(r, FUN = mean, MARGIN = 2)})
+for (u in utilities) { barplot(res_means[[u]], main = u) }
+
+
+# Boxplots of simulation results ------------------------------------------
+
+boxplot(results$R2, outline = F)
+boxplot(results$HSIC, outline = F)
+boxplot(results$DC, outline = F)
+boxplot(results$BCDC, outline = F)
+boxplot(results$AIDC, outline = F)
+
+normalise_res <- function(x) {(x - mean(x))/sd(x)}
+results$HSIC <- normalise_res(results$HSIC)
+results$DC <- normalise_res(results$DC)

@@ -2,7 +2,15 @@ source("old/old_shapley_helpers.R")
 source("utility_functions.R")
 source("shapley_helpers.R")
 source("datasets/simulated_datasets.R")
+
+#devtools::install_github("NorskRegnesentral/shapr")
+library(shapr)
 library(xgboost)
+
+
+
+
+
 
 # Default xgb with 10 rounds and 50/50 test split, returns model, preds and accuracy 
 basic_xgb <- function(dat) {
