@@ -17,6 +17,23 @@ def make_data_random(d, n):
 
     return x, y
 
+def make_data_noisy(d, n):
+    if d > n:
+        warnings.warn("Warning: More features than samples!", UserWarning)
+
+    if d !=3:
+        print("Please use only d=3 for noisy data function")
+        sys.exit()
+
+    x1 = numpy.random.normal(0, 1, n)
+    x2 = numpy.random.normal(0, 3, n)
+    x3 = numpy.random.normal(0, 4, n)
+    y = x1 + numpy.random.normal(0, 2, n)
+
+    x = numpy.vstack((x1, x2, x3)).T
+
+    return x, y
+
 def make_data_step(d, n):
     if d > n:
         warnings.warn("Warning: More features than samples!", UserWarning)

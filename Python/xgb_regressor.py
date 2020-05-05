@@ -41,7 +41,7 @@ def make_xgb_dict(x, y):
             rmse_dict[_team] = _rmse
     return rmse_dict
 
-def display_shapley(cf="dcor"):
+def display_shapley_vs_xgb(cf="dcor"):
     shapley_values_actual = shapley.calc_shapley_values(X_test, y_test, list(range(D)), cf)
     shapley_values_xgb = shapley.calc_shapley_values(X_test, y_pred, list(range(D)), cf)
 
@@ -54,7 +54,19 @@ def display_shapley(cf="dcor"):
     plt.bar(range(len(shapley_values_xgb)), shapley_values_xgb, color="blue",
             alpha=0.5, label="Predicted")
     plt.legend()
-    plt.show()
+    plt.draw()
+
+def display_shapley(cf="dcor"):
+    shapley_values_actual = shapley.calc_shapley_values(X_train, y_train, list(range(D)), cf)
+
+    _, ax = plt.subplots()
+    ax = nice_axes(ax)
+
+    plt.title(r"Shapley decomposition of {0} on training data".format(cf))
+    plt.bar(range(len(shapley_values_actual)), shapley_values_actual, color="red",
+            alpha=0.5, label="True")
+    plt.legend()
+    plt.draw()
 
 
 def display_predictions(y_test, y_pred):
@@ -63,7 +75,7 @@ def display_predictions(y_test, y_pred):
     plt.scatter(y_test, y_pred)
     plt.xlabel("Y true")
     plt.ylabel("Y predicted")
-    plt.show()
+    plt.draw()
 
 
 def display_feature_importances(model):
@@ -130,15 +142,15 @@ if __name__ == "__main__":
 
 
     # --- Make data
-    D = 5
+    D = 3
     N = 1000
-    X, Y = data.make_data_random(D, N)
-    print(X.shape)
+
+    #X, Y = data.make_data_random(D, N)
     #X, Y = data.make_data_harmonic(D, N)
     #X, Y = data.make_data_step(D, N)
-    D = 2
-    X, Y = data.make_data_xor(D, N)
-    print(X.shape)
+    X, Y = data.make_data_noisy(D, N)
+    #D = 2
+    #X, Y = data.make_data_xor(D, N)
     #sys.exit()
     # ---
 
@@ -176,9 +188,10 @@ if __name__ == "__main__":
     # ---
 
     display_predictions(y_test, y_pred)
-    display_feature_importances(model)
+    #display_feature_importances(model)
     display_shapley()
-    #display_shap(X_test, model)
+    #display_shapley_vs_xgb()
+    display_shap(X_test, model)
     #display_residuals_shapley(X_test, residuals)
 
     plt.show()
