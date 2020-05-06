@@ -77,8 +77,9 @@ if __name__ == "__main__":
     # --- Pick one data generating process
     #DATA_TYPE = "step" #ok
     #DATA_TYPE = "random" #ok
-    DATA_TYPE = "harmonic" #ok
-    #DATA_TYPE = "xor" #ok
+    #DATA_TYPE = "harmonic" #ok
+    #DATA_TYPE = "xor_discrete" #ok
+    DATA_TYPE = "xor_discrete_discrete" #ok
     # ---
 
     DATA_DIR = os.path.join("result_data", "{0}".format(DATA_TYPE))

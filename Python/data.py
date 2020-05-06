@@ -2,6 +2,7 @@ import sys
 import numpy
 import scipy
 import warnings
+import random
 
 def make_data_random(d, n):
     if d > n:
@@ -16,6 +17,23 @@ def make_data_random(d, n):
 
     return x, y
 
+def make_data_noisy(d, n):
+    if d > n:
+        warnings.warn("Warning: More features than samples!", UserWarning)
+
+    if d !=3:
+        print("Please use only d=3 for noisy data function")
+        sys.exit()
+
+    x1 = numpy.random.normal(0, 1, n)
+    x2 = numpy.random.normal(0, 3, n)
+    x3 = numpy.random.normal(0, 4, n)
+    y = x1 + numpy.random.normal(0, 2, n)
+
+    x = numpy.vstack((x1, x2, x3)).T
+
+    return x, y
+
 def make_data_step(d, n):
     if d > n:
         warnings.warn("Warning: More features than samples!", UserWarning)
@@ -24,6 +42,45 @@ def make_data_step(d, n):
 
     x = numpy.array([numpy.random.uniform(-1, 1, n) for _ in range(d)]).T
     y = numpy.matmul([[(-0.5 < _xi and _xi < 0.5) for _xi in _x] for _x in x], two_d)
+
+    return x, y
+
+def make_data_xor_discrete(d, n):
+    if d > n:
+        warnings.warn("Warning: More features than samples!", UserWarning)
+
+    if d !=2:
+        print("Please use only d=2 for XOR function")
+        sys.exit()
+    # no d currently implemented. d=2.
+
+    x1 = numpy.random.uniform(-1, 1, n)
+    x1 = [0 if _x<0 else 1 for _x in x1]
+    x2 = numpy.random.uniform(-1, 1, n)
+    x2 = [0 if _x<0 else 1 for _x in x2]
+
+    y = numpy.logical_xor(x1, x2)
+    y = numpy.array([1 if _y else 0 for _y in y])
+
+    x = numpy.vstack((x1, x2)).T
+
+    return x, y
+
+def make_data_xor_discrete_discrete(d, n):
+    if d > n:
+        warnings.warn("Warning: More features than samples!", UserWarning)
+
+    if d !=2:
+        print("Please use only d=2 for XOR function")
+        sys.exit()
+    # no d currently implemented. d=2.
+
+    test = numpy.repeat([0,1],int(n/2))
+    x1 = random.sample(list(test),n)
+    x2 = random.sample(list(test),n)
+    y = numpy.array([1 if _a else 0 for _a in numpy.logical_xor(x1,x2)])
+
+    x = numpy.vstack((x1, x2)).T
 
     return x, y
 
@@ -38,17 +95,11 @@ def make_data_xor(d, n):
 
     x1 = numpy.random.uniform(-1, 1, n)
     x2 = numpy.random.uniform(-1, 1, n)
+
     y = numpy.array(
             [_x1*(_x1 > 0 and _x2 < 0) + _x2*(_x1 < 0 and _x2 > 0)
            + _x1*(_x1 < 0 and _x2 < 0) - _x2*(_x1 > 0 and _x2 > 0)
             for _x1, _x2 in zip(x1, x2)])
-    x = numpy.vstack((x1, x2)).T
-
-    #x = numpy.random.randn(200, 2)
-
-    #y = numpy.logical_xor(x[:, 0] > 0, x[:, 1] > 0)
-    #y = numpy.where(y, 1, -1)
-
 
     return x, y
 
@@ -73,6 +124,12 @@ def make_data(d, n, data_type):
         return make_data_random(d, n)
     elif data_type is "xor":
         return make_data_xor(d, n)
+
+    elif data_type is "xor_discrete":
+        return make_data_xor_discrete(d, n)
+
+    elif data_type is "xor_discrete_discrete":
+        return make_data_xor_discrete_discrete(d, n)
 
     print("Data type {0} is not implemented".format(data_type))
     sys.exit()
