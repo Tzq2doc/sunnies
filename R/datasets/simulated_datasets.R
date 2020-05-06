@@ -27,6 +27,15 @@ dat_nonrandom_squared <- function(d = 4, n = 100, A = (2*(0:(d-1)))) {
 }
 
 ##############################
+# This is almost non-random
+dat_nonnoisy_squared <- function(d = 4, n = 100, A = (2*(0:(d-1))), sd = 0.001) {
+  X <- matrix(seq(-1,1,length.out = n*d),n,d)
+  for (i in 1:d) {X[,i] <- X[,i] + rnorm(n,0,sd)}
+  y <- X^2 %*% A
+  return(cbind(y,X))
+}
+
+##############################
 # This is a modification of dat_unif_squared, where all
 # the coefficients are set to be 1, and
 # we set X_2 = X_1 + eps_1 and X_3 = X_1 + eps_2
@@ -90,6 +99,19 @@ dat_concat_XOR <- function(n = 1e3) {
   y  <- as.integer(xor(x1 > 0, x2 > 0))
   #plot(x1,x2, col = y + 1, main = "XOR")
   return(cbind(y,x1,x2))
+}
+
+###############################
+# Counterexamples in Probability and Statistics 2.12
+dat_tricky_gaussians <- function(n = 1e3) {
+  x1 <- rnorm(n, 0, 1)
+  x2 <- rnorm(n, 0, 1)
+  x3a <- rnorm(n, 0, 2)
+  x3 <- abs(x3a)*sign(x1*x2)
+  y <- x1 + x2 + x3
+  #plot(x1,y)
+  #plot(x3,y)
+  return(cbind(y,x1,x2,x3))
 }
 
 

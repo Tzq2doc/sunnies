@@ -3,17 +3,50 @@ source("comparison_helpers.R")
 U <- DC
 n <- 1e3
 xgb01 <- run_evaluations(dat_concat_XOR         , U, n)
-xgb09 <- run_evaluations(dat_catcat_XOR         , U, n) 
-xgb08 <- run_evaluations(dat_concon_XOR         , U, n)
-xgb02 <- run_evaluations(dat_unif_squared       , U, n)
-xgb03 <- run_evaluations(dat_nonrandom_squared  , U, n)
-xgb04 <- run_evaluations(dat_unif_squared_corr  , U, n)
-xgb05 <- run_evaluations(dat_unif_independent   , U, n)
-xgb06 <- run_evaluations(dat_unif_cos           , U, n) 
-xgb07 <- run_evaluations(dat_unif_step          , U, n)
+xgb02 <- run_evaluations(dat_catcat_XOR         , U, n) 
+xgb03 <- run_evaluations(dat_concon_XOR         , U, n)
+xgb04 <- run_evaluations(dat_unif_squared       , U, n)
+xgb05 <- run_evaluations(dat_nonrandom_squared  , U, n)
+xgb06 <- run_evaluations(data_gen = dat_nonnoisy_squared, 
+                         d = 4, U, n, A = rep(1,4), plots = T)
+xgb07 <- run_evaluations(dat_unif_squared_corr  , U, n)
+xgb08 <- run_evaluations(dat_unif_independent   , U, n)
+xgb09 <- run_evaluations(dat_unif_cos           , U, n) 
+xgb10 <- run_evaluations(dat_unif_step          , U, n)
+xgb11 <- run_evaluations(dat_unif_step          , U, n)
+xgb12 <- run_evaluations(dat_tricky_gaussians   , U, n, plots = T)
+
+shap.plot.summary(xgb06$shapp)
+shap.plot.summary(xgb12$shapp)
+
+plot(x2, y)
+plot(x1, y)
+cor(y,x1)
 
 
-library(shapr)
+
+
+
+
+
+
+
+
+
+####### Another dataset
+#n <- 1e3
+#x1 <- rnorm(n, 0, 1)
+#x2 <- 2*x1 + rnorm(n, 0.001)
+#x3 <- 3*x1  + rnorm(n, 0.001)
+#y <- x1 + x2 + x3
+#dat <- cbind(y,x1,x2,x3)
+
+######## Another dataset
+#n <- 1e4
+#x1 <- runif(n,-1,1)
+#x2 <- runif(n,-1,1)
+#y <- exp(-(x1+x2)^2)
+#dat <- cbind(y,x1,x2)
 
 ##### NOISY DATA EXAMPLE
 n <- 1e3
@@ -23,16 +56,24 @@ x3 <- rnorm(n, 0, 6)
 y <- x1 + rnorm(n, 0, 4)
 dat <- cbind(y,x1,x2,x3)
 
-barplot(shapley(y, dat[,-1], DC))
-#barplot(shapley(y, dat[,-1], HSIC))
+#####
+n <- 1e3
+x1 <- rnorm(n, 0, 1)
+x2 <- rnorm(n, 0, 1)
+x3a <- rnorm(n, 0, 2)
+x3 <- abs(x3a)*sign(x1*x2)
+y <- x1 + x2 + x3
+dat <- cbind(y,x1,x2,x3)
 
 
-#n <- 1e3
-#x1 <- rnorm(n, 0, 1)
-#x2 <- 2*x1 + rnorm(n, 0.001)
-#x3 <- 3*x1  + rnorm(n, 0.001)
-#y <- x1 + x2 + x3
-#dat <- cbind(y,x1,x2,x3)
+#####
+n <- 1e3
+x1 <- rnorm(n, 0, 1)
+x2 <- rnorm(n, 0, 1)
+y <- abs(rnorm(n, 0, 1))*sign(x1*x2)
+dat <- cbind(y,x1,x2)
+
+
 
 # Produce the simulated data
 #dat <- dat_catcat_XOR(n = 1e3)
@@ -43,6 +84,8 @@ colnames(x_train) <- paste0("x",1:ncol(x_train))
 x_test <- dat[-train,-1]
 colnames(x_test) <- paste0("x",1:ncol(x_train))
 y_train <- dat[train,1, drop = F]
+colnames(y_train) <- "y"
+y_test <- dat[-train, 1, drop = F]
 colnames(y_train) <- "y"
 binary <- T
 if (length(unique(y_train)) > 2) {binary <- F}
@@ -55,29 +98,34 @@ model <- xgboost(
   nround = 20,
   verbose = FALSE
 )
+preds_test <- predict(model, x_test)
 
+# MSE
+sum((preds_test - y_test)^2)/nrow(x_test)
 
-sum((predict(model, x_test) - dat[-train,1])^2)/nrow(x_test)
+# The predictions are fairly poor
+plot(preds_test, y_test)
 
-#
-## Prepare the data for explanation
-#explainer <- shapr(x_train, model)
-#
-## Specifying the phi_0, i.e. the expected prediction without any features
-#p <- mean(y_train)
-#
-## Computing the actual Shapley values with kernelSHAP accounting for feature dependence using
-## the empirical (conditional) distribution approach with bandwidth parameter sigma = 0.1 (default)
-#N <- 50
-#explanation <- explain(
-#  x_test[sample(1:nrow(x_test),N),],
-#  approach = "empirical",
-#  explainer = explainer,
-#  prediction_zero = p
+# But since the data is so noisy, using SHAP it's hard to see which
+# variables are independent (see below). But using sunnies
+# it is more clear.
+
+# Even the R2 does a good job here.
+# NOTE: We use training data to avoid biasing the results of model selection
+barplot(shapley(y_train, x_train, R2))
+barplot(shapley(y_train, x_train, DC))
+barplot(shapley(y_train, x_train, AIDC))
+barplot(shapley(y_train, x_train, HSIC))
+
+#model2 <- xgboost(
+#  data = x_train[,1,drop = F],
+#  label = y_train,
+#  nround = 20,
+#  verbose = FALSE
 #)
-#print(explanation$dt)
-#expl <- explanation$dt
-#expl
+#preds_test2 <- predict(model2, x_test[,1,drop = F])
+#sum((preds_test2 - y_test)^2)/nrow(x_test)
+#plot(preds_test2, y_test)
 
 #install.packages("SHAPforxgboost")
 library(SHAPforxgboost)
@@ -150,18 +198,40 @@ shap.plot.force_plot_bygroup(plot_data)
 
 
 
-# Optionally set colours using RColorBrewer
-library(RColorBrewer)
-display.brewer.all()
-cols = brewer.pal(11, "Spectral")
-pal = colorRampPalette(cols)
-expl$order = findInterval(expl$none, sort(expl$none))
-
-plot(expl$x4, rep(4,nrow(expl)), 
-     col=pal(nrow(expl))[expl$order], ylim = c(0,5))
-points(expl$x3, rep(3,nrow(expl)),
-       col=pal(nrow(expl))[expl$order])
-points(expl$x2, rep(2,nrow(expl)),
-       col=pal(nrow(expl))[expl$order])
-points(expl$x1, rep(1,nrow(expl)),
-       col=pal(nrow(expl))[expl$order])
+# # Optionally set colours using RColorBrewer
+# library(RColorBrewer)
+# display.brewer.all()
+# cols = brewer.pal(11, "Spectral")
+# pal = colorRampPalette(cols)
+# expl$order = findInterval(expl$none, sort(expl$none))
+# 
+# plot(expl$x4, rep(4,nrow(expl)), 
+#      col=pal(nrow(expl))[expl$order], ylim = c(0,5))
+# points(expl$x3, rep(3,nrow(expl)),
+#        col=pal(nrow(expl))[expl$order])
+# points(expl$x2, rep(2,nrow(expl)),
+#        col=pal(nrow(expl))[expl$order])
+# points(expl$x1, rep(1,nrow(expl)),
+#        col=pal(nrow(expl))[expl$order])
+# 
+# 
+#library(shapr)
+#
+## Prepare the data for explanation
+#explainer <- shapr(x_train, model)
+#
+## Specifying the phi_0, i.e. the expected prediction without any features
+#p <- mean(y_train)
+#
+## Computing the actual Shapley values with kernelSHAP accounting for feature dependence using
+## the empirical (conditional) distribution approach with bandwidth parameter sigma = 0.1 (default)
+#N <- 50
+#explanation <- explain(
+#  x_test[sample(1:nrow(x_test),N),],
+#  approach = "empirical",
+#  explainer = explainer,
+#  prediction_zero = p
+#)
+#print(explanation$dt)
+#expl <- explanation$dt
+#expl
