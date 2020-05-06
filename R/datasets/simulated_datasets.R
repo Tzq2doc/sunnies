@@ -109,6 +109,7 @@ dat_tricky_gaussians <- function(n = 1e3) {
   x3a <- rnorm(n, 0, 2)
   x3 <- abs(x3a)*sign(x1*x2)
   y <- x1 + x2 + x3
+  #plot(x2,y)
   #plot(x1,y)
   #plot(x3,y)
   return(cbind(y,x1,x2,x3))

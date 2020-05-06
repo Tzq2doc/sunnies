@@ -8,13 +8,6 @@ library(shapr)
 library(xgboost)
 library(SHAPforxgboost)
 
-
-
-
-
-
-
-
 # Default xgb with 10 rounds and 50/50 test split, returns model, preds and accuracy 
 basic_xgb <- function(dat, plots = F) {
   n <- nrow(dat)
