@@ -139,29 +139,36 @@ def plot_data(X, Y):
     ax = nice_axes(ax)
 
     if len(X.shape) == 1:
-        plt.scatter(X, Y, alpha=0.8)
+        plt.scatter(X, Y, alpha=0.5)
     else:
         for _i in range(X.shape[1]):
-            plt.scatter(X[:, _i], Y, label="X{0}".format(_i), alpha=0.8)
+            plt.scatter(X[:, _i], Y, label="X{0}".format(_i), alpha=0.5)
         plt.legend(loc="upper right")
 
     plt.xlabel("X")
     plt.ylabel("Y")
-    plt.draw()
+    #plt.draw()
 
 if __name__ == "__main__":
     D = 4
     N = 1000
     N_ITER = 5
 
+    #X, Y = data.make_data_tricky_gaussian(3, 500)
+    X, Y = data.make_data_seq(4, 20)
+    print(X)
+    plot_data(X, Y)
+    #plt.scatter(X[:,1], X[:,2])
+    plt.show()
+
     #X, Y = data.make_data_random(D, N)
 
     #X, Y = data.make_data_step(D, N)
     #plot_data(X[:,1], Y)
 
-    X, Y = data.make_data_noisy(5, N)
-    plot_data(X[:,0], Y)
-    plot_data(X[:,1], Y)
+    #X, Y = data.make_data_noisy(5, N)
+    #plot_data(X[:,0], Y)
+    #plot_data(X[:,1], Y)
 
     #X, Y = data.make_data_xor(2, N)
     #plot_data(X[:,0], Y)

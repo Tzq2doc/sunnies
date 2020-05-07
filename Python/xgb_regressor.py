@@ -14,6 +14,13 @@ import data
 import shapley
 from plot import nice_axes
 
+def normalise(x):
+    if len(set([round(_x, 5) for _x in x])):
+        return numpy.ones(numpy.array(x).shape)
+
+
+    return (x - numpy.mean(x))/(numpy.std(x))
+
 def make_xgb_dict(x, y):
     rmse_dict = {}
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2,
@@ -56,15 +63,30 @@ def display_shapley_vs_xgb(cf="dcor"):
     plt.legend()
     plt.draw()
 
-def display_shapley(cf="dcor"):
-    shapley_values_actual = shapley.calc_shapley_values(X_train, y_train, list(range(D)), cf)
+def display_shapley(X_train, y_train, cf=["dcor"]):
+    if not isinstance(cf, list):
+        cf = list(cf)
+
+    d = X_train.shape[1]
+
+    x_range = list(range(d))
 
     _, ax = plt.subplots()
     ax = nice_axes(ax)
 
-    plt.title(r"Shapley decomposition of {0} on training data".format(cf))
-    plt.bar(range(len(shapley_values_actual)), shapley_values_actual, color="red",
-            alpha=0.5, label="True")
+
+    for _n, _cf in enumerate(cf):
+        print(_cf)
+        _shapley_values = shapley.calc_shapley_values(X_train, y_train,
+                x_range, _cf)
+        #_shapley_values = normalise(_shapley_values)
+
+        plt.bar(x_range + 0.1*_n*numpy.ones(d), _shapley_values, alpha=0.5,
+                label=_cf, width=0.1)
+
+    #plt.title(r"Shapley decomposition of {0} on training data".format(cf))
+    #plt.bar(range(len(shapley_values_actual)), shapley_values_actual, color="red",
+    #        alpha=0.5, label="True")
     plt.legend()
     plt.draw()
 
@@ -115,12 +137,21 @@ def display_residuals_shapley(x, residuals, cf="dcor"):
     plt.draw()
 
 def display_shap(x, model):
+    _, ax = plt.subplots()
+    ax = shapley.nice_axes(ax)
+
     # --- SHAP package
     explainer = shap.TreeExplainer(model)
     expected_value = explainer.expected_value
     shap_values = explainer.shap_values(x)
+    shap_mean = []
+    for _n in range(x.shape[1]):
+        shap_mean.append(numpy.mean(abs(x[:, _n])))
 
-    #_, ax = plt.figure()
+    plt.bar(range(len(shap_mean)), shap_mean, color="red", width=0.1, alpha=0.5, label="SHAP")
+    plt.title("SHAP mean")
+    plt.draw()
+
     _, ax = plt.subplots()
     ax = shapley.nice_axes(ax)
 
@@ -148,7 +179,9 @@ if __name__ == "__main__":
     #X, Y = data.make_data_random(D, N)
     #X, Y = data.make_data_harmonic(D, N)
     #X, Y = data.make_data_step(D, N)
-    X, Y = data.make_data_noisy(D, N)
+    #X, Y = data.make_data_noisy(D, N)
+    #X, Y = data.make_data_tricky_gaussian(D, N)
+    X, Y = data.make_data_seq(D, N)
     #D = 2
     #X, Y = data.make_data_xor(D, N)
     #sys.exit()
@@ -187,9 +220,9 @@ if __name__ == "__main__":
     #print("Saved file {0}.npy".format(filename))
     # ---
 
-    display_predictions(y_test, y_pred)
-    #display_feature_importances(model)
-    display_shapley()
+    #display_predictions(y_test, y_pred)
+    display_feature_importances(model)
+    display_shapley(X_train, y_train, cf=["dcor", "aidc", "hsic"])
     #display_shapley_vs_xgb()
     display_shap(X_test, model)
     #display_residuals_shapley(X_test, residuals)
