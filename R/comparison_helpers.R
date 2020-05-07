@@ -11,6 +11,7 @@ library(SHAPforxgboost)
 # Default xgb with 10 rounds and 50/50 test split, returns model, preds and accuracy 
 basic_xgb <- function(dat, plots = F) {
   n <- nrow(dat)
+  train <- sample(1:n, floor(n/2))
   x_train <- dat[train,-1]
   colnames(x_train) <- paste0("x",1:ncol(x_train))
   x_test <- dat[-train,-1]
@@ -47,9 +48,9 @@ basic_xgb <- function(dat, plots = F) {
 ## Utility of each feature alone, then utility of all features together
 examine_utility <- function(dat, utility) {
   for (i in 2:ncol(dat)) { 
-    cat(paste0("C({",i-1,"}): ", utility(dat[,1], dat[,i])),"\n") 
+    cat(paste0("C({",i-1,"}): ", utility(dat[,1,drop=F], dat[,i,drop=F])),"\n") 
   }
-  cat(paste0("C([d]): ", utility(dat[,1], dat[,-1])),"\n") 
+  cat(paste0("C([d]): ", utility(dat[,1,drop=F], dat[,-1,drop=F])),"\n") 
 }
 
 # Use SHAPforxgboost library to get SHAP values

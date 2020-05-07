@@ -8,7 +8,7 @@ xgb03 <- run_evaluations(dat_concon_XOR         , U, n)
 xgb04 <- run_evaluations(dat_unif_squared       , U, n)
 xgb05 <- run_evaluations(dat_nonrandom_squared  , U, n)
 xgb06 <- run_evaluations(data_gen = dat_nonnoisy_squared, 
-                         d = 4, U, n, A = rep(1,4), plots = T)
+                         d = 4, U, n, sd = 0.01, plots = T)
 xgb07 <- run_evaluations(dat_unif_squared_corr  , U, n)
 xgb08 <- run_evaluations(dat_unif_independent   , U, n)
 xgb09 <- run_evaluations(dat_unif_cos           , U, n) 
@@ -22,16 +22,6 @@ shap.plot.summary(xgb12$shapp)
 plot(x2, y)
 plot(x1, y)
 cor(y,x1)
-
-
-
-
-
-
-
-
-
-
 
 ####### Another dataset
 #n <- 1e3

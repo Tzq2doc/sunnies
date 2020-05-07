@@ -28,10 +28,10 @@ dat_nonrandom_squared <- function(d = 4, n = 100, A = (2*(0:(d-1)))) {
 
 ##############################
 # This is almost non-random
-dat_nonnoisy_squared <- function(d = 4, n = 100, A = (2*(0:(d-1))), sd = 0.001) {
-  X <- matrix(seq(-1,1,length.out = n*d),n,d)
+dat_nonnoisy_squared <- function(d = 4, n = 100, sd = 0.01) {
+  X <- matrix(seq(-1,1, length.out = n*d),n,d)
   for (i in 1:d) {X[,i] <- X[,i] + rnorm(n,0,sd)}
-  y <- X^2 %*% A
+  y <- X^2 %*% rep(1,d)
   return(cbind(y,X))
 }
 
