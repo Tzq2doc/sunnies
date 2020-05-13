@@ -124,6 +124,7 @@ def make_data_xor(d, n):
 
     x1 = numpy.random.uniform(-1, 1, n)
     x2 = numpy.random.uniform(-1, 1, n)
+    x = numpy.vstack((x1, x2)).T
 
     y = numpy.array(
             [_x1*(_x1 > 0 and _x2 < 0) + _x2*(_x1 < 0 and _x2 > 0)
