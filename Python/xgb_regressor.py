@@ -2,7 +2,7 @@ import sys
 from typing import Union
 from itertools import combinations
 from matplotlib.colors import LinearSegmentedColormap, ListedColormap, Colormap
-from xgboost import XGBRegressor, plot_importance
+from xgboost import XGBRegressor, XGBClassifier, plot_importance
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, mean_squared_error
 import numpy
@@ -181,9 +181,9 @@ if __name__ == "__main__":
     #X, Y = data.make_data_step(D, N)
     #X, Y = data.make_data_noisy(D, N)
     #X, Y = data.make_data_tricky_gaussian(D, N)
-    X, Y = data.make_data_seq(D, N)
+    X, Y = data.make_data_seq(D, N, 0.0001)
     #D = 2
-    #X, Y = data.make_data_xor(D, N)
+    #X, Y = data.make_data_xor_discrete_discrete(D, N)
     #sys.exit()
     # ---
 
@@ -207,11 +207,36 @@ if __name__ == "__main__":
     X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.2,
                                                         random_state=7)
 
+    ## ----------------------------------------------------
+    ## --- RL DATA
+    #import pandas as pd
+    #data = pd.read_csv("../RL_data/student-mat.csv")
+
+    ## ----------------------------------------------------
+    #print(data.columns)
+    #print("Dropping most of the data here because it's type string.")
+    #data = data.select_dtypes([numpy.number])
+    #print(data.columns)
+    ## ----------------------------------------------------
+
+    #X, y = data.iloc[:, :-1], data.iloc[:, -1]
+
+
+    #X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=123)
+
+    #X_train = numpy.array(X_train)
+    #y_train = numpy.array(y_train)
+    #X_test = numpy.array(X_test)
+    #y_test = numpy.array(y_test)
+    ## ----------------------------------------------------
+
     # --- Fit model and predict
+    #model = XGBClassifier()
     model = XGBRegressor()
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
     residuals = y_test - y_pred
+    #print(accuracy_score(y_test, y_pred))
     # ---
 
     # --- Save predictions
@@ -222,7 +247,7 @@ if __name__ == "__main__":
 
     #display_predictions(y_test, y_pred)
     display_feature_importances(model)
-    display_shapley(X_train, y_train, cf=["dcor", "aidc", "hsic"])
+    display_shapley(X_train, y_train, cf=["dcor", "aidc"])#, "r2"])#"hsic"])
     #display_shapley_vs_xgb()
     display_shap(X_test, model)
     #display_residuals_shapley(X_test, residuals)

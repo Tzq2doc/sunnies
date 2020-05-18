@@ -5,10 +5,10 @@ import warnings
 import random
 
 
-def make_data_seq(d, n):
+def make_data_seq(d, n, sigma=0.01):
 
     x = numpy.reshape(numpy.linspace(-1, 1, d*n), (d, n)).T
-    noise = numpy.random.normal(0, 0.01, (n,d))
+    noise = numpy.random.normal(0, sigma, (n,d))
     x = x + noise
     y = numpy.matmul(numpy.multiply(x, x), numpy.ones(d))
 
@@ -18,7 +18,7 @@ def make_data_seq(d, n):
 
 def make_data_tricky_gaussian(d, n):
     if d !=3:
-        print("Please use only d=3 for noisy data function")
+        print("Please use only d=3 for tricky gaussian data function")
         sys.exit()
 
     x1 = numpy.random.normal(0, 1, n)
