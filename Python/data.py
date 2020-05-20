@@ -4,6 +4,35 @@ import scipy
 import warnings
 import random
 
+
+def make_data_seq(d, n, sigma=0.01):
+
+    x = numpy.reshape(numpy.linspace(-1, 1, d*n), (d, n)).T
+    noise = numpy.random.normal(0, sigma, (n,d))
+    x = x + noise
+    y = numpy.matmul(numpy.multiply(x, x), numpy.ones(d))
+
+
+    return x, y
+
+
+def make_data_tricky_gaussian(d, n):
+    if d !=3:
+        print("Please use only d=3 for tricky gaussian data function")
+        sys.exit()
+
+    x1 = numpy.random.normal(0, 1, n)
+    x2 = numpy.random.normal(0, 1, n)
+    x3 = numpy.random.normal(0, 2, n)
+
+    x3 = numpy.abs(x3)*numpy.sign(x1*x2)
+
+    x = numpy.vstack((x1, x2, x3)).T
+
+    y = x1 + x2 + x3
+
+    return x, y
+
 def make_data_random(d, n):
     if d > n:
         warnings.warn("Warning: More features than samples!", UserWarning)
@@ -95,6 +124,7 @@ def make_data_xor(d, n):
 
     x1 = numpy.random.uniform(-1, 1, n)
     x2 = numpy.random.uniform(-1, 1, n)
+    x = numpy.vstack((x1, x2)).T
 
     y = numpy.array(
             [_x1*(_x1 > 0 and _x2 < 0) + _x2*(_x1 < 0 and _x2 > 0)

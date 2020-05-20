@@ -2,18 +2,16 @@ import sys
 from typing import Union
 from itertools import combinations
 from matplotlib.colors import LinearSegmentedColormap, ListedColormap, Colormap
-from xgboost import XGBRegressor, plot_importance
+from xgboost import XGBRegressor, XGBClassifier, plot_importance
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, mean_squared_error
 import numpy
 import matplotlib.pyplot as plt
 import shap
 
-# --- My stuff
-import data
-import shapley
-from plot import nice_axes
 
+# --- Need to define this function before importing shapley, or i'll have made
+# an infinite regress
 def make_xgb_dict(x, y):
     rmse_dict = {}
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2,
@@ -41,6 +39,19 @@ def make_xgb_dict(x, y):
             rmse_dict[_team] = _rmse
     return rmse_dict
 
+# --- My stuff
+import data
+import shapley
+from plot import nice_axes
+
+def normalise(x):
+    if len(set([round(_x, 5) for _x in x])):
+        return numpy.ones(numpy.array(x).shape)
+
+
+    return (x - numpy.mean(x))/(numpy.std(x))
+
+
 def display_shapley_vs_xgb(cf="dcor"):
     shapley_values_actual = shapley.calc_shapley_values(X_test, y_test, list(range(D)), cf)
     shapley_values_xgb = shapley.calc_shapley_values(X_test, y_pred, list(range(D)), cf)
@@ -56,15 +67,30 @@ def display_shapley_vs_xgb(cf="dcor"):
     plt.legend()
     plt.draw()
 
-def display_shapley(cf="dcor"):
-    shapley_values_actual = shapley.calc_shapley_values(X_train, y_train, list(range(D)), cf)
+def display_shapley(X_train, y_train, cf=["dcor"]):
+    if not isinstance(cf, list):
+        cf = list(cf)
+
+    d = X_train.shape[1]
+
+    x_range = list(range(d))
 
     _, ax = plt.subplots()
     ax = nice_axes(ax)
 
-    plt.title(r"Shapley decomposition of {0} on training data".format(cf))
-    plt.bar(range(len(shapley_values_actual)), shapley_values_actual, color="red",
-            alpha=0.5, label="True")
+
+    for _n, _cf in enumerate(cf):
+        print(_cf)
+        _shapley_values = shapley.calc_shapley_values(X_train, y_train,
+                x_range, _cf)
+        #_shapley_values = normalise(_shapley_values)
+
+        plt.bar(x_range + 0.1*_n*numpy.ones(d), _shapley_values, alpha=0.5,
+                label=_cf, width=0.1)
+
+    #plt.title(r"Shapley decomposition of {0} on training data".format(cf))
+    #plt.bar(range(len(shapley_values_actual)), shapley_values_actual, color="red",
+    #        alpha=0.5, label="True")
     plt.legend()
     plt.draw()
 
@@ -115,12 +141,21 @@ def display_residuals_shapley(x, residuals, cf="dcor"):
     plt.draw()
 
 def display_shap(x, model):
+    _, ax = plt.subplots()
+    ax = shapley.nice_axes(ax)
+
     # --- SHAP package
     explainer = shap.TreeExplainer(model)
     expected_value = explainer.expected_value
     shap_values = explainer.shap_values(x)
+    shap_mean = []
+    for _n in range(x.shape[1]):
+        shap_mean.append(numpy.mean(abs(x[:, _n])))
 
-    #_, ax = plt.figure()
+    plt.bar(range(len(shap_mean)), shap_mean, color="red", width=0.1, alpha=0.5, label="SHAP")
+    plt.title("SHAP mean")
+    plt.draw()
+
     _, ax = plt.subplots()
     ax = shapley.nice_axes(ax)
 
@@ -148,9 +183,11 @@ if __name__ == "__main__":
     #X, Y = data.make_data_random(D, N)
     #X, Y = data.make_data_harmonic(D, N)
     #X, Y = data.make_data_step(D, N)
-    X, Y = data.make_data_noisy(D, N)
+    #X, Y = data.make_data_noisy(D, N)
+    #X, Y = data.make_data_tricky_gaussian(D, N)
+    X, Y = data.make_data_seq(D, N, 0.0001)
     #D = 2
-    #X, Y = data.make_data_xor(D, N)
+    #X, Y = data.make_data_xor_discrete_discrete(D, N)
     #sys.exit()
     # ---
 
@@ -174,11 +211,36 @@ if __name__ == "__main__":
     X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.2,
                                                         random_state=7)
 
+    ## ----------------------------------------------------
+    ## --- RL DATA
+    #import pandas as pd
+    #data = pd.read_csv("../RL_data/student-mat.csv")
+
+    ## ----------------------------------------------------
+    #print(data.columns)
+    #print("Dropping most of the data here because it's type string.")
+    #data = data.select_dtypes([numpy.number])
+    #print(data.columns)
+    ## ----------------------------------------------------
+
+    #X, y = data.iloc[:, :-1], data.iloc[:, -1]
+
+
+    #X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=123)
+
+    #X_train = numpy.array(X_train)
+    #y_train = numpy.array(y_train)
+    #X_test = numpy.array(X_test)
+    #y_test = numpy.array(y_test)
+    ## ----------------------------------------------------
+
     # --- Fit model and predict
+    #model = XGBClassifier()
     model = XGBRegressor()
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
     residuals = y_test - y_pred
+    #print(accuracy_score(y_test, y_pred))
     # ---
 
     # --- Save predictions
@@ -187,9 +249,9 @@ if __name__ == "__main__":
     #print("Saved file {0}.npy".format(filename))
     # ---
 
-    display_predictions(y_test, y_pred)
-    #display_feature_importances(model)
-    display_shapley()
+    #display_predictions(y_test, y_pred)
+    display_feature_importances(model)
+    display_shapley(X_train, y_train, cf=["dcor", "aidc"])#, "r2"])#"hsic"])
     #display_shapley_vs_xgb()
     display_shap(X_test, model)
     #display_residuals_shapley(X_test, residuals)
