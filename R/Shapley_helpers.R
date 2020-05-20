@@ -6,7 +6,7 @@
 # v: Vector of feature indices (column numbers of X) to calculate shapley value of.
 #    If missing then assumed all.
 # CF: Characteristic function. Estimated (using utility) if missing.
-shapley <- function(y, X, utility, v, CF) {
+shapley <- function(y, X, utility, v, CF, drop_method = "actual", ...) {
   if (!missing(CF)) {
     if (missing(v)) {
       v <- attr(CF,"players")
@@ -19,15 +19,17 @@ shapley <- function(y, X, utility, v, CF) {
     y <- y[, 1, drop = F]
   }
   if ( !is.matrix(X) ) {X <- as.matrix(X)}
-  CF <- estimate_characteristic_function(X, utility, y = y)
+  CF <- estimate_CF(X, utility, drop_method = drop_method, y = y, ...)
   if (missing(v)) {v <- 1:ncol(X)}
-  return(shapley_vec(CF, v))
+  sv <- shapley_vec(CF, v)
+  names(sv) <- colnames(X)
+  return(sv)
 }
 
 # We don't know the population characteristic function,
 # so we use the utility function to estimate the 
 # characteristic function from the data X.
-estimate_characteristic_function <- function(X, utility, ...) {
+estimate_CF <- function(X, utility, drop_method = "actual", ...) {
   values <- list()
   players <- 1:ncol(X)
   num_players <- length(players)
@@ -35,10 +37,21 @@ estimate_characteristic_function <- function(X, utility, ...) {
   
   # We now precompute all the
   # possible values of the utility function
-  for ( s in team_sizes ) {
-    teams_of_size_s <- combn( players, s, simplify = F )
-    for ( team in teams_of_size_s ) {
-      values[[access_string(team)]] <- utility(X[,team,drop = F], ...) 
+  if ( tolower(drop_method) == "actual" ) {
+    for ( s in team_sizes ) {
+      teams_of_size_s <- combn( players, s, simplify = F )
+      for ( team in teams_of_size_s ) {
+        Xs <- X[,team,drop = F]
+        values[[access_string(team)]] <- utility(Xs, ...) 
+      }
+    }
+  } else if ( tolower(drop_method) == "mean" ) {
+    for ( s in team_sizes ) {
+      teams_of_size_s <- combn( players, s, simplify = F )
+      for ( team in teams_of_size_s ) {
+        Xs <- mean_drop(X, team)
+        values[[access_string(team)]] <- utility(Xs, ...) 
+      }
     }
   }
   # We created some bindings in this environment 
@@ -49,6 +62,16 @@ estimate_characteristic_function <- function(X, utility, ...) {
   attr(CF, "players") <- players
   return(CF)
 }
+
+mean_drop <- function(X, team) {
+  d <- ncol(X)
+  if (length(team) == d) {return(X)}
+  Xr <- if ( length(team) > 0 ) {X[, -team, drop = F]} else {X}
+  Er <- apply(Xr, FUN = mean, MARGIN = 2)
+  for (nam in names(Er)) {X[,nam] <- Er[nam]}
+  return(X)
+}
+
 
 # The Shapley value of a player can be broken into
 # the mean of the average utility of that player

@@ -3,6 +3,10 @@ library(Rfast) # dcor bcdcor
 library(dHSIC) # dHSIC
 library(expm) # sqrtm
 
+
+
+# Vanilla utility functions -----------------------------------------------
+
 # R squared
 R2 <- function(y, X) {if (length(X) == 0) {0} else {summary(speedlm(y~X))$r.squared}}
 # Distance correlation
@@ -18,7 +22,24 @@ HSIC <- function(y,X){if (length(X) == 0) {0} else {hsic(y,X)}}
 
 
 
+# res vs fits utility functions -------------------------------------------
+
+DC_rf <- function(y, X, model){if (length(X) == 0) {0} else {
+    preds <- predict(model, X)
+    if (zero_range(preds)) {return(0)}
+    dcor(y-preds, preds)$dcor
+  }
+}
+
+
 # UTILITY FUNCTION HELPERS ------------------------------------------------
+zero_range <- function(x, tol = .Machine$double.eps ^ 0.5) {
+  if (length(x) == 1) return(TRUE)
+  x <- range(x, na.rm = T) / mean(x, na.rm = T)
+  isTRUE(all.equal(x[1], x[2], tolerance = tol))
+}
+
+
 gaussianK <- function(X) {
   n <- nrow(X); d <- ncol(X)
   bandwidth <- dHSIC:::median_bandwidth_rcpp(X, n, d)
