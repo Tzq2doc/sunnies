@@ -9,18 +9,9 @@ import numpy
 import matplotlib.pyplot as plt
 import shap
 
-# --- My stuff
-import data
-import shapley
-from plot import nice_axes
 
-def normalise(x):
-    if len(set([round(_x, 5) for _x in x])):
-        return numpy.ones(numpy.array(x).shape)
-
-
-    return (x - numpy.mean(x))/(numpy.std(x))
-
+# --- Need to define this function before importing shapley, or i'll have made
+# an infinite regress
 def make_xgb_dict(x, y):
     rmse_dict = {}
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2,
@@ -47,6 +38,19 @@ def make_xgb_dict(x, y):
             _rmse = numpy.sqrt(mean_squared_error(y_test, _pred))
             rmse_dict[_team] = _rmse
     return rmse_dict
+
+# --- My stuff
+import data
+import shapley
+from plot import nice_axes
+
+def normalise(x):
+    if len(set([round(_x, 5) for _x in x])):
+        return numpy.ones(numpy.array(x).shape)
+
+
+    return (x - numpy.mean(x))/(numpy.std(x))
+
 
 def display_shapley_vs_xgb(cf="dcor"):
     shapley_values_actual = shapley.calc_shapley_values(X_test, y_test, list(range(D)), cf)

@@ -4,7 +4,6 @@ utility functions.
 Uses shapley_helpers.py
 """
 
-import shapley_helpers as sh
 import numpy
 from itertools import combinations
 import dcor
@@ -15,6 +14,7 @@ import matplotlib.pyplot as plt
 # --- My stuff
 from plot import nice_axes, violinplot, boxplot, barplot_all
 import data
+import shapley_helpers as sh
 
 CF_DICT = {
         "r2" : r"$R^2$",
