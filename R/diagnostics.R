@@ -71,6 +71,9 @@ par(mfrow = c(1,3))
           xlab = "time", ylab = "response importance")
   plot(0:m, mse, type = 'b', xlab = "time", ylab = "MSE")
 dev.off()
+summary(lm(t ~ ., data = data.frame(t = 0:m, shaps_res)))
+
+
 
 
 ## RESIDUAL DEPENDENCE ATTRIBUTION
