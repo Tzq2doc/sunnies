@@ -26,15 +26,29 @@ split_dat <- function(dat) {
               y_test = y_test))
 }
 
-diagnostic_plots <- function(sdat,xgb) {
-  plot(xgb$pred_test, xgb$residuals_test,
-       ylab = "Residuals", xlab = "Fitted values",
-       main = "res vs fits")
-  abline(h = 0, col = "red")
-  barplot(shapley(xgb$residuals_test, sdat$x_test, utility = DC),
-          main = "residuals shap (test set)")
-  barplot(shapley(sdat$y_train, sdat$x_train, utility = DC),
-          main = "labels shap (training set)")
+diagnostics <- function(sdat, xgbt, plot = "all", 
+                        features = 1:ncol(sdat$x_test)) {
+  shap_res <- shapley(xgbt$residuals_test, 
+                      sdat$x_test[,features], utility = DC)
+  shap_lab <- shapley(sdat$y_train, 
+                      sdat$x_train[,features], utility = DC)
+  if (tolower(plot) == "all") {
+    plot(xgbt$pred_test, xgbt$residuals_test,
+         ylab = "Residuals", xlab = "Fitted values",
+         main = "res vs fits")
+    abline(h = 0, col = "red")
+    barplot(shap_res,
+            main = "residuals shap (test set)")
+    barplot(shap_lab, 
+            main = "labels shap (training set)")
+  }
+  if (tolower(plot) == "rvf") {
+    plot(xgbt$pred_test, xgbt$residuals_test,
+         ylab = "Residuals", xlab = "Fitted values",
+         main = "res vs fits")
+    abline(h = 0, col = "red")
+  }
+  return(list(shap_lab = shap_lab, shap_res = shap_res))
 }
 
 # Default xgb with 10 rounds and 50/50 test split, returns model, preds and accuracy 
@@ -72,6 +86,50 @@ basic_xgb <- function(dat, plots = F) {
               residuals_test = residuals_test,
               residuals_train = residuals_train))
 }
+
+
+basic_xgb_fit <- function(dat) {
+  binary <- T
+  if (length(unique(dat$y_train)) > 2) {binary <- F}
+  obj <- if (binary) {"binary:logistic"} else {"reg:squarederror"}
+  bst <- xgboost(
+    data = dat$x_train,
+    label = dat$y_train,
+    nround = 20,
+    verbose = FALSE,
+    objective = obj
+  )
+  attr(bst, "binary") <- binary
+  return(bst)
+}
+
+basic_xgb_test <- function(bst, dat, plots = F) {
+  binary <- attr(bst, "binary")
+  pred_test <- predict(bst, dat$x_test)
+  pred_train <- predict(bst, dat$x_train)
+  residuals_test <- dat$y_test - pred_test
+  residuals_train <- dat$y_train - pred_train
+  if (plots) {plot(pred_test, dat$y_test)}
+  if (binary) {
+    pred_test <- as.numeric(pred_test > 0.5)
+    acc <- sum(pred_test == dat$y_test)/length(dat$y_test)
+    mse <- "not applicable (binary response)"
+  } else {
+    mse <- mean((pred_test - dat$y_test)^2) 
+    acc <- "not applicable (continuous response)"
+  }
+  test_mse <- mse
+  test_acc <- acc
+  return(list(pred_test = pred_test,
+              test_mse = test_mse,
+              test_acc = test_acc,
+              pred_train = pred_train,
+              residuals_test = residuals_test,
+              residuals_train = residuals_train))
+}
+
+
+
 
 ## Utility of each feature alone, then utility of all features together
 examine_utility <- function(dat, utility) {

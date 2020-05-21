@@ -8,13 +8,14 @@ xgb03 <- run_evaluations(dat_concon_XOR         , U, n, plots = T)
 xgb04 <- run_evaluations(dat_unif_squared       , U, n, plots = T)
 xgb05 <- run_evaluations(dat_nonrandom_squared  , U, n, plots = T)
 xgb06 <- run_evaluations(data_gen = dat_nonnoisy_squared, 
-                         d = 4, U, n, sd = 0.1, plots = T)
+                         d = 4, U, n, sd = 0.02, plots = T)
 xgb07 <- run_evaluations(dat_unif_squared_corr  , U, n, plots = T)
 xgb08 <- run_evaluations(dat_unif_independent   , U, n, plots = T)
 xgb09 <- run_evaluations(dat_unif_cos           , U, n, plots = T) 
 xgb10 <- run_evaluations(dat_unif_step          , U, n, plots = T)
 xgb11 <- run_evaluations(dat_unif_step          , U, n, plots = T)
 xgb12 <- run_evaluations(dat_tricky_gaussians   , U, n, plots = T)
+
 
 shap.plot.summary(xgb06$shapp)
 shap.plot.summary(xgb12$shapp)
