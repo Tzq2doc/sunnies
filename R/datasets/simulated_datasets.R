@@ -10,6 +10,16 @@
 # dat_categorical_XOR
 # dat_continuous_XOR
 
+
+###############################
+dat_linear_interaction <- function(n = 1e3, d = 4) {
+  X <- matrix(rnorm(n*d), nrow = n, ncol = d)
+  y <- rowSums(X) + X[,d-1]*X[,d]
+  dat <- cbind(y,X)
+  return(dat)
+}
+
+
 ##############################
 # y = 0*X_1^2 + 2*X_2^2 + ... + (d-1)X_d^2 where X_i ~ unif(-1,1) 
 dat_unif_squared <- function(d = 4, n = 100, A = (2*(0:(d-1))),

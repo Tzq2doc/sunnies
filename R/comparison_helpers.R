@@ -8,7 +8,7 @@ library(shapr)
 library(xgboost)
 library(SHAPforxgboost)
 
-split_dat <- function(dat) {
+split_dat <- function(dat, df = F) {
   n <- nrow(dat)
   train <- sample(1:n, floor(n/2))
   x_train <- dat[train,-1]
@@ -19,11 +19,17 @@ split_dat <- function(dat) {
   colnames(y_train) <- "y"
   y_test <- dat[-train, 1, drop = F]
   colnames(y_train) <- "y"
+  if (df) {
+    df_yx_train <- data.frame(y = y_train, x_train) 
+    df_yx_test <- data.frame(y = y_test, x_test)
+  }
   return(list(dat = dat, 
               x_train = x_train,
               y_train = y_train,
               x_test = x_test,
-              y_test = y_test))
+              y_test = y_test,
+              df_yx_train = df_yx_train,
+              df_yx_test = df_yx_test))
 }
 
 diagnostics <- function(sdat, xgbt, plot = "all", 

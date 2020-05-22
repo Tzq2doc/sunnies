@@ -6,6 +6,64 @@ source("shapley_helpers.R")
 library(xgboost)
 library(dplyr)
 
+
+Y = X1 + X2 + X3 + X4^2
+
+########################################################
+######### PREDICTION DEPENDENCE ATTRIBUTION
+n <- 1e3; d <- 4
+X <- matrix(rnorm(n*d,0,1), nrow = n, ncol = d)
+y <- rowSums(X[,-d]) + X[,d]^2 + rnorm(n,0,0.5)
+dat <- cbind(y,X)
+# in other words
+#dat <- dat_linear_interaction()
+sdat <- split_dat(dat, df = T)
+
+lmodel <- lm(y ~ ., dat = sdat$df_yx_train)
+lm_pred_test <- predict(lmodel, data.frame(sdat$x_test))
+plot(sdat$y_test, lm_pred_test, xlab = "labels", ylab = "predictions")
+slm <- summary(lmodel); slm
+coefs <- slm$coefficients[,"Estimate"]
+#plot(lmodel)
+
+slabs <- shapley(sdat$y_test, sdat$x_test, utility = DC)
+spred <- shapley(lm_pred_test, sdat$x_test, utility = DC)
+sresd <- shapley(lm_pred_test - sdat$y_test, sdat$x_test, utility = DC)
+barplot(rbind(slabs, spred, sresd),
+        xlab = "Feature",
+        ylab = "Attribution",
+        col = c("black","gray","red"),
+        beside = T)
+legend(x = "top", legend = c("labels","predictions","residuals"), 
+       col = c("black","gray","red"), pch = c(15,15,15))
+
+for (i in 1:d) {
+  plot(sdat$y_test, sdat$x_test[,i], main = paste0("Feature x",i))
+  abline(a = coefs[1], b = coefs[i+1], col = "red")
+}
+
+lmodel2 <- lm(y ~ . + I(x4^2), dat = sdat$df_yx_train)
+
+lm_pred_test2 <- predict(lmodel2, data.frame(sdat$x_test))
+plot(sdat$y_test, lm_pred_test2, xlab = "labels", ylab = "predictions")
+slm <- summary(lmodel2); slm
+coefs <- slm$coefficients[,"Estimate"]
+#plot(lmodel)
+
+slabs <- shapley(sdat$y_test, sdat$x_test, utility = DC)
+spred <- shapley(lm_pred_test2, sdat$x_test, utility = DC)
+sresd <- shapley(lm_pred_test2 - sdat$y_test, sdat$x_test, utility = DC)
+barplot(rbind(slabs, spred, sresd),
+        xlab = "Feature",
+        ylab = "Attribution",
+        col = c("black","gray","red"),
+        beside = T)
+legend(x = "top", legend = c("labels","predictions","residuals"), 
+       col = c("black","gray","red"), pch = c(15,15,15))
+
+# There always seems to be more correlation with the predictions,
+# which makes a lot of sense if the model is biased. 
+
 ########################################################
 ######### RESIDUAL DEPENDENCE ATTRIBUTION
 ### Feature drift detection: when DGP changes over time.
