@@ -101,7 +101,7 @@ shapley_sim1 <- function(utility, N, n, d, data_gen, ...) {
   for ( i in 1:N ) {
     dat <- data_gen(d, n, ...)
     y <- dat[,1, drop=F]; X <- dat[,-1, drop=F]
-    CF_i <- estimate_characteristic_function(X, utility, y = y)
+    CF_i <- estimate_CF(X, utility, y = y)
     results[i,] <- shapley(CF = CF_i)
   }
   results

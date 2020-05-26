@@ -8,8 +8,7 @@ library(shapr)
 library(xgboost)
 library(SHAPforxgboost)
 
-# Default xgb with 10 rounds and 50/50 test split, returns model, preds and accuracy 
-basic_xgb <- function(dat, plots = F) {
+split_dat <- function(dat, df = F) {
   n <- nrow(dat)
   train <- sample(1:n, floor(n/2))
   x_train <- dat[train,-1]
@@ -20,30 +19,123 @@ basic_xgb <- function(dat, plots = F) {
   colnames(y_train) <- "y"
   y_test <- dat[-train, 1, drop = F]
   colnames(y_train) <- "y"
+  if (df) {
+    df_yx_train <- data.frame(y = y_train, x_train) 
+    df_yx_test <- data.frame(y = y_test, x_test)
+  }
+  return(list(dat = dat, 
+              x_train = x_train,
+              y_train = y_train,
+              x_test = x_test,
+              y_test = y_test,
+              df_yx_train = df_yx_train,
+              df_yx_test = df_yx_test))
+}
+
+diagnostics <- function(sdat, xgbt, plot = "all", 
+                        features = 1:ncol(sdat$x_test)) {
+  shap_res <- shapley(xgbt$residuals_test, 
+                      sdat$x_test[,features], utility = DC)
+  shap_lab <- shapley(sdat$y_train, 
+                      sdat$x_train[,features], utility = DC)
+  if (tolower(plot) == "all") {
+    plot(xgbt$pred_test, xgbt$residuals_test,
+         ylab = "Residuals", xlab = "Fitted values",
+         main = "res vs fits")
+    abline(h = 0, col = "red")
+    barplot(shap_res,
+            main = "residuals shap (test set)")
+    barplot(shap_lab, 
+            main = "labels shap (training set)")
+  }
+  if (tolower(plot) == "rvf") {
+    plot(xgbt$pred_test, xgbt$residuals_test,
+         ylab = "Residuals", xlab = "Fitted values",
+         main = "res vs fits")
+    abline(h = 0, col = "red")
+  }
+  return(list(shap_lab = shap_lab, shap_res = shap_res))
+}
+
+# Default xgb with 10 rounds and 50/50 test split, returns model, preds and accuracy 
+basic_xgb <- function(dat, plots = F) {
   binary <- T
-  if (length(unique(y_train)) > 2) {binary <- F}
+  if (length(unique(dat$y_train)) > 2) {binary <- F}
   obj <- if (binary) {"binary:logistic"} else {"reg:squarederror"}
   bst <- xgboost(
-    data = x_train,
-    label = y_train,
+    data = dat$x_train,
+    label = dat$y_train,
     nround = 20,
     verbose = FALSE,
     objective = obj
   )
-  pred <- predict(bst, x_test)
-  if (plots) {plot(pred, y_test)}
+  pred_test <- predict(bst, dat$x_test)
+  pred_train <- predict(bst, dat$x_train)
+  residuals_test <- dat$y_test - pred_test
+  residuals_train <- dat$y_train - pred_train
+  if (plots) {plot(pred_test, dat$y_test)}
   if (binary) {
-    pred <- as.numeric(pred > 0.5)
-    acc <- sum(pred == y_test)/length(y_test)
+    pred_test <- as.numeric(pred_test > 0.5)
+    acc <- sum(pred_test == dat$y_test)/length(dat$y_test)
     mse <- "not applicable (binary response)"
   } else {
-    mse <- mean((pred - y_test)^2) 
+    mse <- mean((pred_test - dat$y_test)^2) 
     acc <- "not applicable (continuous response)"
   }
-  attr(pred, "mse") <- mse
-  attr(pred, "acc") <- acc
-  return(list(bst = bst, pred = pred, x_train = x_train))
+  test_mse <- mse
+  test_acc <- acc
+  return(list(bst = bst, 
+              pred_test = pred_test,
+              test_mse = test_mse,
+              test_acc = test_acc,
+              pred_train = pred_train,
+              residuals_test = residuals_test,
+              residuals_train = residuals_train))
 }
+
+
+basic_xgb_fit <- function(dat) {
+  binary <- T
+  if (length(unique(dat$y_train)) > 2) {binary <- F}
+  obj <- if (binary) {"binary:logistic"} else {"reg:squarederror"}
+  bst <- xgboost(
+    data = dat$x_train,
+    label = dat$y_train,
+    nround = 20,
+    verbose = FALSE,
+    objective = obj
+  )
+  attr(bst, "binary") <- binary
+  return(bst)
+}
+
+basic_xgb_test <- function(bst, dat, plots = F) {
+  binary <- attr(bst, "binary")
+  pred_test <- predict(bst, dat$x_test)
+  pred_train <- predict(bst, dat$x_train)
+  residuals_test <- dat$y_test - pred_test
+  residuals_train <- dat$y_train - pred_train
+  if (plots) {plot(pred_test, dat$y_test)}
+  if (binary) {
+    pred_test <- as.numeric(pred_test > 0.5)
+    acc <- sum(pred_test == dat$y_test)/length(dat$y_test)
+    mse <- "not applicable (binary response)"
+  } else {
+    mse <- mean((pred_test - dat$y_test)^2) 
+    acc <- "not applicable (continuous response)"
+  }
+  test_mse <- mse
+  test_acc <- acc
+  return(list(pred_test = pred_test,
+              test_mse = test_mse,
+              test_acc = test_acc,
+              pred_train = pred_train,
+              residuals_test = residuals_test,
+              residuals_train = residuals_train))
+}
+
+
+
 
 ## Utility of each feature alone, then utility of all features together
 examine_utility <- function(dat, utility) {
@@ -57,9 +149,6 @@ examine_utility <- function(dat, utility) {
 examine_SHAP <- function(bst, x_train, plots = F) {
   shap_values <- shap.values(xgb_model = bst, X_train = x_train)
   shap_long <- shap.prep(xgb_model = bst, X_train = x_train)
-  if (plots) {
-    barplot(shap_values$mean_shap_score, main = "SHAP")
-  }
   return(list(shapm = shap_values$mean_shap_score, 
               shapp = shap_long))
 }
@@ -74,26 +163,61 @@ run_evaluations <- function(data_gen, utility, n = 1e3,  plots = F, ...) {
   dgp_name <- toupper(as.character(substitute(data_gen)))
   cat(paste0("\n-----",dgp_name,"-----\n"))
   dat <- data_gen(n = n, ...)
+  dat <- split_dat(dat)
   xgb <- basic_xgb(dat, plots = plots)
   cat("---\n")
-  print(xgb.importance(model = xgb$bst))
+  imp <- xgb.importance(model = xgb$bst)
+  print(imp)
   cat("---\n")
-  cat(paste0("xgb acc: ", attributes(xgb$pred)$acc),"\n")
-  cat(paste0("xgb mse: ", attributes(xgb$pred)$mse),"\n")
+  cat(paste0("xgb acc: ", xgb$test_acc,"\n"))
+  cat(paste0("xgb mse: ", xgb$test_mse,"\n"))
   cat("---\n")
-  examine_utility(dat, utility)
+  examine_utility(dat$dat, utility)
   cat("---\n")
-  shaps <- shapley(dat, utility = utility)
+  shaps_train <- shapley(cbind(dat$y_train, dat$x_train), utility = utility)
+  shaps_test <- shapley(cbind(dat$y_test, dat$x_test), utility = utility)
+  shaps_preds_train <- shapley(
+    cbind(xgb$pred_train, dat$x_train), utility = utility)
+  shaps_preds_test <- shapley(
+    cbind(xgb$pred_test, dat$x_test), utility = utility)
+  shaps_diff_train <- shaps_preds_train - shaps_train
+  shaps_diff_test <- shaps_preds_test - shaps_test
+  shaps_res_train <- shapley(xgb$residuals_train, dat$x_train, utility = DC)
+  shaps_res_test <- shapley(xgb$residuals_test, dat$x_test, utility = DC)
+  cat("Sunnies test: ", shaps_test, "\n")
+  cat("Sunnies train: ", shaps_train, "\n")
+  cat("Sunnies preds train: ", shaps_preds_train, "\n")
+  cat("Sunnies preds test: ", shaps_preds_test, "\n")
+  cat("Sunnies diffs (pred-lab) train: ", shaps_diff_test, "\n")
+  cat("Sunnies diffs (pred-lab) test: ", shaps_diff_test, "\n")
+  cat("---\n")
+  SHAP_train <- examine_SHAP(xgb$bst, dat$x_train, plots = plots)
+  SHAP_test <- examine_SHAP(xgb$bst, dat$x_test, plots = plots)
   if (plots) {
+    barplot(imp$Gain, main = "xgb.importance", names.arg = imp$Feature)
+    barplot(SHAP_train$shapm, main = "SHAP train")
+    barplot(SHAP_test$shapm, main = "SHAP test")
     U <- as.character(substitute(utility))
-    barplot(shaps, main = paste0("sunnies ", U))
+    plot(xgb$pred_test, xgb$residuals_test,
+         ylab = "Residuals", xlab = "Fitted values",
+         main = "res vs fits")
+    abline(h = 0, col = "red")
+    barplot(shaps_test, main = paste0("sunnies test "))
+    barplot(shaps_train, main = paste0("sunnies train "))
+    barplot(shaps_preds_test, main = paste0("sunnies preds test "))
+    barplot(shaps_preds_train, main = paste0("sunnies preds train "))
+    barplot(shaps_diff_test, main = paste0("s(pred)-s(lab) test "))
+    barplot(shaps_diff_train, main = paste0("s(pred)-s(lab) train "))
+    barplot(shaps_res_test, main = "s(lab - pred) test ")
+    barplot(shaps_res_train, main = "s(lab - pred) train ")
   }
-  cat("Shapley: ", shaps,"\n")
-  cat("---\n")
-  SHAP <- examine_SHAP(xgb$bst, xgb$x_train, plots = plots)
-  cat("SHAP: ", SHAP$shapm, "\n")
+  cat("SHAP train: ", SHAP_train$shapm, "\n")
+  cat("SHAP test: ", SHAP_test$shapm, "\n")
   #if (plots) {shap.plot.summary(SHAP$shapp)}
   cat("---\n")
   cat("\n")
-  return(list(xgb,shapp = SHAP$shapp))
+  return(list(xgb = xgb, 
+              shapp_train = SHAP_train$shapp,
+              shapp_test = SHAP_test$shapp,
+              dat = dat))
 }

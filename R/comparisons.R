@@ -2,19 +2,20 @@ source("comparison_helpers.R")
 
 U <- DC
 n <- 1e3
-xgb01 <- run_evaluations(dat_concat_XOR         , U, n)
-xgb02 <- run_evaluations(dat_catcat_XOR         , U, n) 
-xgb03 <- run_evaluations(dat_concon_XOR         , U, n)
-xgb04 <- run_evaluations(dat_unif_squared       , U, n)
-xgb05 <- run_evaluations(dat_nonrandom_squared  , U, n)
+xgb01 <- run_evaluations(dat_concat_XOR         , U, n, plots = T)
+xgb02 <- run_evaluations(dat_catcat_XOR         , U, n, plots = T) 
+xgb03 <- run_evaluations(dat_concon_XOR         , U, n, plots = T)
+xgb04 <- run_evaluations(dat_unif_squared       , U, n, plots = T)
+xgb05 <- run_evaluations(dat_nonrandom_squared  , U, n, plots = T)
 xgb06 <- run_evaluations(data_gen = dat_nonnoisy_squared, 
-                         d = 4, U, n, sd = 0.01, plots = T)
-xgb07 <- run_evaluations(dat_unif_squared_corr  , U, n)
-xgb08 <- run_evaluations(dat_unif_independent   , U, n)
-xgb09 <- run_evaluations(dat_unif_cos           , U, n) 
-xgb10 <- run_evaluations(dat_unif_step          , U, n)
-xgb11 <- run_evaluations(dat_unif_step          , U, n)
+                         d = 4, U, n, sd = 0.02, plots = T)
+xgb07 <- run_evaluations(dat_unif_squared_corr  , U, n, plots = T)
+xgb08 <- run_evaluations(dat_unif_independent   , U, n, plots = T)
+xgb09 <- run_evaluations(dat_unif_cos           , U, n, plots = T) 
+xgb10 <- run_evaluations(dat_unif_step          , U, n, plots = T)
+xgb11 <- run_evaluations(dat_unif_step          , U, n, plots = T)
 xgb12 <- run_evaluations(dat_tricky_gaussians   , U, n, plots = T)
+
 
 shap.plot.summary(xgb06$shapp)
 shap.plot.summary(xgb12$shapp)
