@@ -24,6 +24,7 @@ from xgb_regressor import (display_predictions, display_feature_importances,
 #data = pd.read_csv("student-mat.csv")
 #target = "G3"
 data = pd.read_csv('processed.cleveland.data', sep=",", header=0)
+#data.to_csv("heart_disease_cleveland.csv")
 data = data.iloc[:, [0,1,3,4,7,9,13]]
 target = "num"
 # ----------------------------------------------------

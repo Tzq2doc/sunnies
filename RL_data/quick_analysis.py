@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 #0, 3,4,7,9,14
 data = pd.read_csv('processed.cleveland.data', sep=",", header=0)
 #data = pd.read_csv("student-mat.csv")
+#X_data = pd.read_csv("X_data.csv")
 
 # ----------------------------------------------------
 print(data.columns)
