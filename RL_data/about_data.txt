@@ -1,3 +1,5 @@
+Source: Kaggle, https://www.kaggle.com/uciml/student-alcohol-consumption
+
 The data were obtained in a survey of students math and portuguese language courses in secondary school. It contains a lot of interesting social, gender and study information about students. You can use it for some EDA or try to predict students final grade.
 
 Attributes for both student-mat.csv (Math course) and student-por.csv (Portuguese language course) datasets:
@@ -72,6 +74,3 @@ G3 - final grade (numeric: from 0 to 20, output target)
 
 Additional note: there are several (382) students that belong to both datasets . These students can be identified by searching for identical attributes that characterize each student, as shown in the annexed R file.
 
-Source: Kaggle
-
-https://www.kaggle.com/uciml/student-alcohol-consumption

@@ -52,9 +52,10 @@ def normalise(x):
     return (x - numpy.mean(x))/(numpy.std(x))
 
 
-def display_shapley_vs_xgb(cf="dcor"):
-    shapley_values_actual = shapley.calc_shapley_values(X_test, y_test, list(range(D)), cf)
-    shapley_values_xgb = shapley.calc_shapley_values(X_test, y_pred, list(range(D)), cf)
+def display_shapley_vs_xgb(X_test, y_test, y_pred, cf="dcor"):
+    d = X_test.shape[1]
+    shapley_values_actual = shapley.calc_shapley_values(X_test, y_test, list(range(d)), cf)
+    shapley_values_xgb = shapley.calc_shapley_values(X_test, y_pred, list(range(d)), cf)
 
     _, ax = plt.subplots()
     ax = nice_axes(ax)
@@ -88,7 +89,7 @@ def display_shapley(X_train, y_train, cf=["dcor"]):
         plt.bar(x_range + 0.1*_n*numpy.ones(d), _shapley_values, alpha=0.5,
                 label=_cf, width=0.1)
 
-    #plt.title(r"Shapley decomposition of {0} on training data".format(cf))
+    plt.title(r"Shapley decomposition of {0} on training data".format(cf))
     #plt.bar(range(len(shapley_values_actual)), shapley_values_actual, color="red",
     #        alpha=0.5, label="True")
     plt.legend()
@@ -113,17 +114,29 @@ def display_feature_importances(model):
     for _n, _imp in enumerate(feature_importance):
         print("Feature {0}: {1}".format(_n, _imp))
 
+    # --- Get indices of features sorted by importance
+    importance_index = [_n for _, _n in (sorted(zip(feature_importance,
+        range(len(feature_importance))), reverse=True))]
+    print("Feature indices by importance:")
+    print(importance_index)
+
     fig, ax = plt.subplots()
     ax = shapley.nice_axes(ax)
 
-    #plt.bar(range(len(feature_importance)), feature_importance)
-    ax.barh(range(len(feature_importance)), feature_importance)
-    ax.set_yticks([_n for _n in range(len(feature_importance))])
-    ax.set_yticklabels(["Feature {0}".format(_n+1) for _n in
-        range(len(feature_importance))])
-    plt.xlabel("Relative feature importance")
-    ax.set_xticklabels([])
+    plt.bar(range(len(feature_importance)), feature_importance)
+    ax.set_xticks([_n for _n in range(len(feature_importance))])
 
+    # ------------------------------------------------------
+    #THIS IS WRONG AND I DONT KNOW WHY:
+    #ax.barh(range(len(feature_importance)), feature_importance)
+    #ax.set_yticks([_n for _n in range(len(feature_importance))])
+    #ax.set_yticklabels(["Feature {0}".format(_n+1) for _n in
+    #    range(len(feature_importance))])
+    #plt.xlabel("Relative feature importance")
+    #ax.set_xticklabels([])
+    # ------------------------------------------------------
+
+    plt.title("XGBoost feature importances")
     plt.draw()
 
 def display_residuals_shapley(x, residuals, cf="dcor"):
@@ -188,8 +201,9 @@ if __name__ == "__main__":
     X, Y = data.make_data_seq(D, N, 0.0001)
     #D = 2
     #X, Y = data.make_data_xor_discrete_discrete(D, N)
-    #sys.exit()
+    sys.exit()
     # ---
+
 
     ## --- Data with no relationship
     #D = 5
@@ -252,7 +266,7 @@ if __name__ == "__main__":
     #display_predictions(y_test, y_pred)
     display_feature_importances(model)
     display_shapley(X_train, y_train, cf=["dcor", "aidc"])#, "r2"])#"hsic"])
-    #display_shapley_vs_xgb()
+    #display_shapley_vs_xgb(X_test, y_test, y_pred, cf="dcor")
     display_shap(X_test, model)
     #display_residuals_shapley(X_test, residuals)
 
