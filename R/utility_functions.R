@@ -10,7 +10,10 @@ library(expm) # sqrtm
 # R squared
 R2 <- function(y, X) {if (length(X) == 0) {0} else {summary(speedlm(y~X))$r.squared}}
 # Distance correlation
-DC <- function(y, X){if (length(X) == 0) {0} else {dcor(y,X)$dcor}}
+DC <- function(y, X){if (length(X) == 0) {return(0)} else {
+  dc <- dcor(y,X)$dcor
+  if (is.nan(dc)) {return(0)} else {return(dc)}
+  }}
 # Bias corrected distance correlation
 BCDC <- function(y, X){if (length(X) == 0) {0} else {bcdcor(y,X)}}
 # Affine invariant distance correlation

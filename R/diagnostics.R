@@ -6,20 +6,96 @@ source("shapley_helpers.R")
 library(xgboost)
 library(dplyr)
 
+########################################################
+######### PREDICTION DEPENDENCE ATTRIBUTION EXAMPLE 3
+# Between and within group effects
 
-Y = X1 + X2 + X3 + X4^2
+# The chance of being 1 increases with group number
+n <- 3e3
+n_groups <- 10
+p0 <- 0.1 # Probability of being in group 0 (and then it grows linearly by group)
+p0 <- p0*n_groups/2
+d <- 4 # The number of low impact variables
+X <- matrix(rnorm(n*d,0,1), nrow = n, ncol = d)
+p_group <- seq(from = p0, to = 1-p0, length.out = n_groups)
+p_group <- p_group/sum(p_group)
+group <- sample(0:(n_groups-1), n, replace = T, prob = p_group)
+p_bin <- group/(n_groups-1) # probability that bin = 1 in each group
+binary <- rbinom(n, 1, p_bin)
+# If there are more 1s in a group, then the response tends to be higher.
+# Within a group, then the response tends to be lower for 1s.
+beta_0 <- 0# intercept
+beta_1 <- -0.5 # The within-effect of binary: beta_1*(binij - p_groupj)
+beta_2 <- 0.72 # The between-effect of binary: beta_2*p_groupj
+beta_3 <- 0.0001 # the impact of low-impact variables
+
+y <- beta_0 + beta_1*(binary - p_bin) + beta_2*p_bin + rnorm(n,0,0.1)
+  #beta_3*rowSums(X) + rnorm(n,0,0.1)
+
+## Plot the effect of group k
+k <- 8
+index_k <- which(group == k)
+yk <- y[index_k]
+bink <- binary[index_k]
+index_0 <- which(bink == 0)
+plot(bink, yk, main = paste0("Group ", k), xlab = "binary", ylab = "y")
+lines(x = c(0,1), 
+      y = c(mean(yk[index_0]), mean(yk[-index_0])),
+      col = "red", lwd = 2)
+
+# Plot the effect of binary
+plot(binary,y)
+lines(x = c(0,1), 
+      y = c(mean(y[which(binary == 0)]), mean(y[which(binary == 1)])),
+      col = "red", lwd = 2)
+
+dat <- cbind(y, binary, group)#, X)
+sdat <- split_dat(dat)
+xgb <- basic_xgb_fit(sdat)
+xgbt <- basic_xgb_test(xgb, sdat)
+
+# The model is doing great overall
+plot(xgbt$pred_test, sdat$y_test)
+
+diagn <- diagnostics(sdat, xgbt, plot = "all",
+                      features = 1:2)
+diagn
+
+# But lets look at predictions on just one group
+k <- c(1:6)
+index_k <- which(group %in% k)
+x_group_k <- dat[index_k,-1]
+y_group_k <- dat[index_k,1]
+colnames(x_group_k) <- paste0("x",1:ncol(x_group_k))
+sdatk <- split_dat(dat[index_k,])
+xgbtk <- basic_xgb_test(xgb, sdatk)
+diagnk <- diagnostics(sdatk, xgbtk, plot = "all",
+                      features = 1:2)
+
+diagnk
+#pred_group_k <- predict(xgb$bst, x_group_k)
+plot(xgbtk$pred_test, sdatk$y_test)
+
+
 
 ########################################################
-######### PREDICTION DEPENDENCE ATTRIBUTION
+######### PREDICTION DEPENDENCE ATTRIBUTION EXAMPLE 1
+##### This one is pretty standard and it works 
 n <- 1e3; d <- 4
 X <- matrix(rnorm(n*d,0,1), nrow = n, ncol = d)
 y <- rowSums(X[,-d]) + X[,d]^2 + rnorm(n,0,0.5)
 dat <- cbind(y,X)
-# in other words
-#dat <- dat_linear_interaction()
+
+# ### PREDICTION DEPENDENCE ATTRIBUTION EXAMPLE 2
+# ## I want to use this when we have shapley interaction values
+# n <- 1e3; d <- 4
+# X <- matrix(rnorm(n*d,0,1), nrow = n, ncol = d)
+# y <- rowSums(X[,-d]) + X[,d]*X[,d-1] +  rnorm(n,0,0.5)
+# dat <- cbind(y,X)
+
 sdat <- split_dat(dat, df = T)
 
-lmodel <- lm(y ~ ., dat = sdat$df_yx_train)
+lmodel <- lm(y ~ . + I(sign(x2)*x3*x4), dat = sdat$df_yx_train)
 lm_pred_test <- predict(lmodel, data.frame(sdat$x_test))
 plot(sdat$y_test, lm_pred_test, xlab = "labels", ylab = "predictions")
 slm <- summary(lmodel); slm
