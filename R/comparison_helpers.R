@@ -38,7 +38,8 @@ split_dat <- function(dat, df = F) {
 }
 
 diagnostics <- function(sdat, xgbt, plot = "all", 
-                        features = 1:ncol(sdat$x_test)) {
+                        features = 1:ncol(sdat$x_test),
+                        feature_names) {
   shap_res <- shapley(xgbt$residuals_test, 
                       sdat$x_test[,features], utility = DC)
   shap_lab <- shapley(sdat$y_test, sdat$x_test[,features], utility = DC)
@@ -54,7 +55,9 @@ diagnostics <- function(sdat, xgbt, plot = "all",
             main = "residuals shap (test set)")
     barplot(shap_lab, 
             main = "labels shap (training set)")
-    barplot(rbind(shap_lab, shap_pred, shap_res),
+    m <- rbind(shap_lab, shap_pred, shap_res)
+    if (!missing(feature_names)) {colnames(m) <- feature_names}
+    barplot(m,
             xlab = "Feature",
             ylab = "Attribution",
             col = c("black","gray","red"),
@@ -73,10 +76,10 @@ diagnostics <- function(sdat, xgbt, plot = "all",
 }
 
 # Default xgb with 10 rounds and 50/50 test split, returns model, preds and accuracy 
-basic_xgb <- function(sdat, plots = F) {
+basic_xgb <- function(sdat, plots = F, obj = "reg:squarederror") {
   binary <- T
   if (length(unique(sdat$y_train)) > 2) {binary <- F}
-  obj <- if (binary) {"binary:logistic"} else {"reg:squarederror"}
+  obj <- if (binary) {"binary:logistic"} else {obj}
   bst <- xgboost(
     data = sdat$x_train,
     label = sdat$y_train,
@@ -110,10 +113,10 @@ basic_xgb <- function(sdat, plots = F) {
 }
 
 
-basic_xgb_fit <- function(dat) {
+basic_xgb_fit <- function(dat, obj = "reg:squarederror") {
   binary <- T
   if (length(unique(dat$y_train)) > 2) {binary <- F}
-  obj <- if (binary) {"binary:logistic"} else {"reg:squarederror"}
+  obj <- if (binary) {"binary:logistic"} else {obj}
   bst <- xgboost(
     data = dat$x_train,
     label = dat$y_train,
