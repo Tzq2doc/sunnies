@@ -22,22 +22,29 @@ split_dat <- function(dat, df = F) {
   if (df) {
     df_yx_train <- data.frame(y = y_train, x_train) 
     df_yx_test <- data.frame(y = y_test, x_test)
+    return(list(dat = dat, 
+                x_train = x_train,
+                y_train = y_train,
+                x_test = x_test,
+                y_test = y_test,
+                df_yx_train = df_yx_train,
+                df_yx_test = df_yx_test))
   }
   return(list(dat = dat, 
               x_train = x_train,
               y_train = y_train,
               x_test = x_test,
-              y_test = y_test,
-              df_yx_train = df_yx_train,
-              df_yx_test = df_yx_test))
+              y_test = y_test))
 }
 
 diagnostics <- function(sdat, xgbt, plot = "all", 
                         features = 1:ncol(sdat$x_test)) {
   shap_res <- shapley(xgbt$residuals_test, 
                       sdat$x_test[,features], utility = DC)
-  shap_lab <- shapley(sdat$y_train, 
-                      sdat$x_train[,features], utility = DC)
+  shap_lab <- shapley(sdat$y_test, sdat$x_test[,features], utility = DC)
+  shap_pred <- shapley(xgbt$pred_test, sdat$x_test[,features], utility = DC)
+  shap_lab_diff <- shap_lab - 
+    shapley(sdat$y_train, sdat$x_train[,features], utility = DC)
   if (tolower(plot) == "all") {
     plot(xgbt$pred_test, xgbt$residuals_test,
          ylab = "Residuals", xlab = "Fitted values",
@@ -47,6 +54,13 @@ diagnostics <- function(sdat, xgbt, plot = "all",
             main = "residuals shap (test set)")
     barplot(shap_lab, 
             main = "labels shap (training set)")
+    barplot(rbind(shap_lab, shap_pred, shap_res),
+            xlab = "Feature",
+            ylab = "Attribution",
+            col = c("black","gray","red"),
+            beside = T)
+    legend(x = "top", legend = c("labels","predictions","residuals"), 
+           col = c("black","gray","red"), pch = c(15,15,15))
   }
   if (tolower(plot) == "rvf") {
     plot(xgbt$pred_test, xgbt$residuals_test,
@@ -54,36 +68,38 @@ diagnostics <- function(sdat, xgbt, plot = "all",
          main = "res vs fits")
     abline(h = 0, col = "red")
   }
-  return(list(shap_lab = shap_lab, shap_res = shap_res))
+  return(list(shap_lab = shap_lab, shap_res = shap_res, shap_pred = shap_pred,
+              shap_lab_diff = shap_lab_diff))
 }
 
 # Default xgb with 10 rounds and 50/50 test split, returns model, preds and accuracy 
-basic_xgb <- function(dat, plots = F) {
+basic_xgb <- function(sdat, plots = F) {
   binary <- T
-  if (length(unique(dat$y_train)) > 2) {binary <- F}
+  if (length(unique(sdat$y_train)) > 2) {binary <- F}
   obj <- if (binary) {"binary:logistic"} else {"reg:squarederror"}
   bst <- xgboost(
-    data = dat$x_train,
-    label = dat$y_train,
+    data = sdat$x_train,
+    label = sdat$y_train,
     nround = 20,
     verbose = FALSE,
     objective = obj
   )
-  pred_test <- predict(bst, dat$x_test)
-  pred_train <- predict(bst, dat$x_train)
-  residuals_test <- dat$y_test - pred_test
-  residuals_train <- dat$y_train - pred_train
-  if (plots) {plot(pred_test, dat$y_test)}
+  pred_test <- predict(bst, sdat$x_test)
+  pred_train <- predict(bst, sdat$x_train)
+  residuals_test <- sdat$y_test - pred_test
+  residuals_train <- sdat$y_train - pred_train
+  if (plots) {plot(pred_test, sdat$y_test)}
   if (binary) {
     pred_test <- as.numeric(pred_test > 0.5)
-    acc <- sum(pred_test == dat$y_test)/length(dat$y_test)
+    acc <- sum(pred_test == sdat$y_test)/length(sdat$y_test)
     mse <- "not applicable (binary response)"
   } else {
-    mse <- mean((pred_test - dat$y_test)^2) 
+    mse <- mean((pred_test - sdat$y_test)^2) 
     acc <- "not applicable (continuous response)"
   }
   test_mse <- mse
   test_acc <- acc
+  attr(bst, "binary") <- binary
   return(list(bst = bst, 
               pred_test = pred_test,
               test_mse = test_mse,
