@@ -1,3 +1,5 @@
+# https://github.com/suinleelab/treeexplainer-study/tree/master/notebooks/mortality
+
 import xgboost
 import os
 import pickle
@@ -11,7 +13,7 @@ import numpy as np
 from tqdm import tqdm
 import keras
 import pandas as pd
-import loadnhanes
+import loadnhanes # This script should be located in project directory sunnies/Python
 import lifelines
 import scipy
 import sys
