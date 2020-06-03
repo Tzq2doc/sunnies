@@ -19,6 +19,9 @@ import sys
 
 
 load_data = False
+Shapley = False
+XGBoost = True
+
 features_to_use = [
     "sex_isFemale",
     "age",
@@ -171,101 +174,100 @@ X = X_train.copy()
 mapped_feature_names = list(map(lambda x: name_map.get(x, x), X.columns))
 
 # === Shapley:
-
-sys.path.insert(0, "../../../sunnies/Python")
-from xgb_regressor import display_shapley
-display_shapley(X_shapley, y_shapley, cf=["dcor", "r2"], xlabels=labels)
-#display_shapley(X_shapley, y_shapley, cf=["dcor", "aidc", "r2", "hsic"], xlabels=labels)
-#display_shapley(X_shapley, y_shapley, cf=["r2"], xlabels=labels)
-plt.show()
-
-sys.exit()
+if Shapley:
+    sys.path.insert(0, "../../../sunnies/Python")
+    from xgb_regressor import display_shapley
+    display_shapley(X_shapley, y_shapley, cf=["dcor", "r2"], xlabels=labels)
+    #display_shapley(X_shapley, y_shapley, cf=["dcor", "aidc", "r2", "hsic"], xlabels=labels)
+    #display_shapley(X_shapley, y_shapley, cf=["r2"], xlabels=labels)
+    plt.show()
 
 
 # === XGBOOST:
-#modelname = "retrained_full_model.dat"
-modelname = "test.dat"
+if XGBoost:
+    modelname = "retrained_full_model.dat"
+    #modelname = "test.dat"
 
-# --- Try to load model from file
-if os.path.isfile(modelname):
-    xgb_model = xgboost.Booster()
-    xgb_model.load_model(modelname)
-    print("Loaded model from file. Not training!")
+    # --- Try to load model from file
+    if os.path.isfile(modelname):
+        xgb_model = xgboost.Booster()
+        xgb_model.load_model(modelname)
+        print("Loaded model from file. Not training!")
 
-else:
-    X_train, X_valid, y_train, y_valid= train_test_split(X_train, y_train, test_size=0.2, random_state=123)
+    else:
+        X_train, X_valid, y_train, y_valid= train_test_split(X_train, y_train, test_size=0.2, random_state=123)
 
-    params = {
-        "learning_rate": 0.001,
-        "n_estimators": 6765,
-        "max_depth": 4,
-        "subsample": 0.5,
-        "reg_lambda": 5.5,
-        "reg_alpha": 0,
-        "colsample_bytree": 1
-    }
+        params = {
+            "learning_rate": 0.001,
+            "n_estimators": 6765,
+            "max_depth": 4,
+            "subsample": 0.5,
+            "reg_lambda": 5.5,
+            "reg_alpha": 0,
+            "colsample_bytree": 1
+        }
 
-    #xgb_model = xgboost.XGBRegressor()
-    xgb_model = xgboost.XGBRegressor(
-        max_depth=params["max_depth"],
-        n_estimators=params["n_estimators"],
-        learning_rate=params["learning_rate"],#math.pow(10, params["learning_rate"]),
-        subsample=params["subsample"],
-        reg_lambda=params["reg_lambda"],
-        colsample_bytree=params["colsample_bytree"],
-        reg_alpha=params["reg_alpha"],
-        n_jobs=16,
-        random_state=1,
-        objective="survival:cox",
-        base_score=1
+        #xgb_model = xgboost.XGBRegressor()
+        xgb_model = xgboost.XGBRegressor(
+            max_depth=params["max_depth"],
+            n_estimators=params["n_estimators"],
+            learning_rate=params["learning_rate"],#math.pow(10, params["learning_rate"]),
+            subsample=params["subsample"],
+            reg_lambda=params["reg_lambda"],
+            colsample_bytree=params["colsample_bytree"],
+            reg_alpha=params["reg_alpha"],
+            n_jobs=16,
+            random_state=1,
+            objective="survival:cox",
+            base_score=1
+        )
+
+        xgb_model.fit(X_train, y_train,
+                verbose=500,
+                eval_set=[(X_valid, y_valid)],
+                #eval_metric="logloss",
+                early_stopping_rounds=10000
+        )
+
+        # --- Save model to file
+        xgb_model.save_model(modelname)
+        print("Saved model to file {0}".format(modelname))
+
+    # === SUMMARY PLOTS
+    explainer = shap.TreeExplainer(xgb_model)
+    print(explainer)
+    print(1)
+    xgb_shap = explainer.shap_values(X)
+    print(xgb_shap)
+    print(2)
+    xgb_shap_interaction = shap.TreeExplainer(xgb_model).shap_interaction_values(X)
+    print(3)
+    shap.dependence_plot(("Age", "Sex"), xgb_shap_interaction, X, feature_names=np.array(mapped_feature_names), show=False)
+    print(4)
+    #pl.savefig("raw_figures/nhanes_age_sex_interaction.pdf", dpi=400)
+    pl.show()
+    #pl.draw()
+    sys.exit()
+
+    shap.dependence_plot(("Age", "Sex"), xgb_shap_interaction, X, feature_names=np.array(mapped_feature_names), show=False)
+    pl.draw()
+    #pl.savefig("raw_figures/nhanes_age_sex_interaction.pdf", dpi=400)
+    #pl.show()
+
+    shap.dependence_plot(("Systolic blood pressure", "Age"), xgb_shap_interaction, X, feature_names=np.array(mapped_feature_names), show=False)
+    pl.draw()
+    #pl.savefig("raw_figures/nhanes_sbp_age_interaction.pdf", dpi=400)
+    #pl.show()
+
+    f = pl.figure(figsize=(4,6))
+    shap.summary_plot(
+        xgb_shap, X, feature_names=mapped_feature_names, plot_type="bar",
+        max_display=15, auto_size_plot=False, show=False
     )
-
-    xgb_model.fit(X_train, y_train,
-            verbose=500,
-            eval_set=[(X_valid, y_valid)],
-            #eval_metric="logloss",
-            early_stopping_rounds=10000
-    )
-
-    # --- Save model to file
-    xgb_model.save_model(modelname)
-    print("Saved model to file {0}".format(modelname))
-
-# === SUMMARY PLOTS
-explainer = shap.TreeExplainer(xgb_model)
-print(explainer)
-print(1)
-xgb_shap = explainer.shap_values(X)
-print(xgb_shap)
-print(2)
-xgb_shap_interaction = shap.TreeExplainer(xgb_model).shap_interaction_values(X)
-print(3)
-shap.dependence_plot(("Age", "Sex"), xgb_shap_interaction, X, feature_names=np.array(mapped_feature_names), show=False)
-print(4)
-#pl.savefig("raw_figures/nhanes_age_sex_interaction.pdf", dpi=400)
-pl.show()
-#pl.draw()
-sys.exit()
-
-shap.dependence_plot(("Age", "Sex"), xgb_shap_interaction, X, feature_names=np.array(mapped_feature_names), show=False)
-pl.draw()
-#pl.savefig("raw_figures/nhanes_age_sex_interaction.pdf", dpi=400)
-#pl.show()
-
-shap.dependence_plot(("Systolic blood pressure", "Age"), xgb_shap_interaction, X, feature_names=np.array(mapped_feature_names), show=False)
-pl.draw()
-#pl.savefig("raw_figures/nhanes_sbp_age_interaction.pdf", dpi=400)
-#pl.show()
-
-f = pl.figure(figsize=(4,6))
-shap.summary_plot(
-    xgb_shap, X, feature_names=mapped_feature_names, plot_type="bar",
-    max_display=15, auto_size_plot=False, show=False
-)
-pl.xlabel("mean(|SHAP value|)")
-#pl.savefig("raw_figures/nhanes_summary_bar.pdf", dpi=400)
-pl.draw()
-pl.show()
+    pl.xlabel("mean(|SHAP value|)")
+    #pl.savefig("raw_figures/nhanes_summary_bar.pdf", dpi=400)
+    pl.draw()
+    pl.show()
 
 
 def c_statistic_harrell(pred, labels):
