@@ -79,12 +79,14 @@ colnames(s) <- c("sex", "age", "PA", "SBP")
 barplot(s,
         xlab = "Feature", ylab = "Attribution",
         col = c("black","gray"), beside = T)
+legend(x = "top", legend = c("males","females"), 
+       col = c("black","gray"), pch = c(15,15))
 
 # Choose X and y here
 dat <- as.matrix(cbind(y_dr,X_dr))
 sdat <- split_dat(dat)
 
-xgb <- basic_xgb_fit(sdat)
+xgb <- basic_xgb_fit(sdat); save(xgb)
 xgbt <- basic_xgb_test(xgb, sdat)
 fts <- which(names(X) %in% interesting)
 diagn <- diagnostics(sdat, xgbt, plot = "all",
@@ -93,6 +95,11 @@ diagn <- diagnostics(sdat, xgbt, plot = "all",
 
 s3 <- shapley(sdat$y_train, sdat$x_train[,1:2], utility = DC)
 s3
+
+xgb2 <- xgb.load("save_test.dat")
+save(xgb, file = "test.dat")
+
+predict(xgb2, sdat$x_test)
 
 # UNUSED ------------------------------------------------------------------
 
