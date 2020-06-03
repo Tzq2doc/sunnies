@@ -1,5 +1,3 @@
-# https://github.com/suinleelab/treeexplainer-study/tree/master/notebooks/mortality
-
 import xgboost
 import os
 import pickle
@@ -13,7 +11,7 @@ import numpy as np
 from tqdm import tqdm
 import keras
 import pandas as pd
-import loadnhanes # This script should be located in project directory sunnies/Python
+import loadnhanes
 import lifelines
 import scipy
 import sys
@@ -64,7 +62,7 @@ y = y[rows]
 data = X.copy()
 data["target"] = y
 
-# split by patient id
+# --- Split by patient id
 pids = np.unique(X.index.values)
 if X.shape[0] == len(pids):
     print("Only unique patient ids")
@@ -80,13 +78,12 @@ data_1 = data[data['sex_isFemale'] == 1]
 # calculate the shapley values of the predictions, the residuals, and the labels,
 # both on the training set and the test set.
 # hopefully find that blood pressure contributes to the residuals more in females (on the deployed model), when the model is trained only on males
-# X_train = 90/10 males/females
-# X_test = 50/50 males/females
 # ==============================================
 
 train_0 = data_0.sample(n=3500, random_state=1)
 train_1 = data_1.sample(n=3500, random_state=1)
 train = pd.concat([train_0, train_1])
+train.to_csv("train_data_5050.csv")
 
 remainder_0 = data_0.drop(train_0.index)
 remainder_1 = data_1.drop(train_1.index)
@@ -95,6 +92,7 @@ remainder_1 = data_1.drop(train_1.index)
 test_0 = remainder_0.sample(n=400, random_state=1)
 test_1 = remainder_1.sample(n=4000, random_state=1)
 test = pd.concat([test_0, test_1])
+test.to_csv("test_data_9010.csv")
 
 # --- Sanity check
 #List1 = test.index.values
@@ -157,9 +155,12 @@ params = {
 }
 
 modelname = "full_model.pickle.dat"
+#modelname = "test_model.dat"
+
 # --- Try to load model from file
 if os.path.isfile(modelname):
-    xgb_model = pickle.load(open(modelname, "rb"))
+    xgb_model = xgboost.Booster()
+    xgb_model.load_model(modelname)
     print("Loaded model from file. Not training!")
 
 else:
@@ -185,8 +186,11 @@ else:
             early_stopping_rounds=10000
     )
 
-    # save model to file
-    pickle.dump(xgb_model, open(modelname, "wb"))
+    # --- Save model to file
+    xgb_model.save_model(modelname)
+    print("Saved model to file {0}".format(modelname))
+
+
 
 # === SUMMARY PLOTS
 explainer = shap.TreeExplainer(xgb_model)
