@@ -3,13 +3,12 @@
 # We will use this to plot the effect of p.
 # The ncols parameter allows us to optionally specify cols directly
 # instead of p.
-remove_all_missing <- function(X, p, count_only = F,
-                               ncols) {
+remove_all_missing <- function(X, p, count_only = F, ncols) {
   n <- nrow(X)
   X <- cbind(1:n, X)
   missv <- naniar::miss_var_summary(X)
   if (missing(ncols)) {
-    to_drop <- missv[(missv["pct_miss"] > p*100),][[1]]
+    to_drop <- missv[(missv["pct_miss"][[1]] > p*100),][[1]]
   } else {
     to_drop <- missv[1:ncols,][[1]]
   }

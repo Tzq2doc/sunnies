@@ -11,15 +11,17 @@ library(ggplot2)
 
 
 Xh <- read.csv("../RL_data/X_data_with_header.csv")
-X <- read.csv("../RL_data/X_data.csv")
-y <- read.csv("../RL_data/y_data.csv")
+X <- read.csv("../RL_data/X_data.csv", header = F)
+y <- read.csv("../RL_data/y_data.csv", header = F)
 names(y) <- "logRR"
 
 Xh <- apply(Xh, FUN = function(x){x[is.nan(x)] <- NA; x}, MARGIN = 2)
 Xh <- as_tibble(Xh)
 names(Xh)
 nrow(Xh)
+nrow(X)
 nrow(y)
+
 
 #### MISSINGNESS
 # None of the y values are missing
@@ -51,11 +53,27 @@ X_dc <- remove_all_missing(Xh2, p = 0)
 length(attr(X_dc, "keep"))
 y_dc <- y
 
-# I was interested in these
+# Comparing some features between X_dr and X_dc
 interesting <- c(
   "sex_isFemale", "age", "physical_activity", "systolic_blood_pressure")
 s1 <- shapley(y_dr, X_dr[,interesting], utility = DC)
 s2 <- shapley(y_dc, X_dc[,interesting], utility = DC)
+s <- rbind(s1, s2)
+colnames(s) <- c("sex", "age", "PA", "SBP")
+barplot(s,
+        xlab = "Feature", ylab = "Attribution",
+        col = c("black","gray"), beside = T)
+
+
+# Comparing some features between all male and all female (in X_dc)
+interesting <- c(
+  "sex_isFemale", "age", "physical_activity", "systolic_blood_pressure")
+X_dcm <- filter(X_dc, sex_isFemale == 0)
+X_dcf <- filter(X_dc, sex_isFemale == 1)
+y_dcm <- y_dc[X_dc$sex_isFemale == 0,]
+y_dcf <- y_dc[X_dc$sex_isFemale == 1,]
+s1 <- shapley(y_dcm, X_dcm[,interesting], utility = DC)
+s2 <- shapley(y_dcf, X_dcf[,interesting], utility = DC)
 s <- rbind(s1, s2)
 colnames(s) <- c("sex", "age", "PA", "SBP")
 barplot(s,
