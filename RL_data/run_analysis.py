@@ -178,7 +178,7 @@ if Shapley:
     sys.path.insert(0, "../../../sunnies/Python")
 
     import shapley
-    x_range = list(range(X_shapley.shape[1])
+    x_range = list(range(X_shapley.shape[1]))
     print(shapley.calc_shapley_values(X_shapley, y_shapley, x_range, "r2"))
 
     from xgb_regressor import display_shapley
