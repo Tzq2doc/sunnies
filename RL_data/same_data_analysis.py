@@ -18,10 +18,14 @@ import sys
 
 
 
-load_data = True
+load_data = False
 Shapley = False
+XGBoost =True
 Pred = True
-XGBoost = False
+
+modelname = "slundberg_model.dat"
+#modelname = "test.dat"
+
 
 features_to_use = [
     "sex_isFemale",
@@ -78,18 +82,20 @@ if not load_data:
     X = X.iloc[rows,:]
     y = y[rows]
 
-    data = X.copy()
-    data["target"] = y
+    #data = X.copy()
+    #data["target"] = y
 
-    #--- Data for Shapley calc
-    shapley_data = data[features_with_target]
-    shapley_data = shapley_data.dropna()
-    X_shapley = shapley_data.drop(["target"], axis=1)
-    X_shapley["sex_isFemale"] = [1 if _x else 0 for _x in X_shapley["sex_isFemale"]]
-    labels = X_shapley.columns
-    X_shapley = np.array(X_shapley[features_to_use])
-    y_shapley = np.array(shapley_data["target"].astype('int'))
-    # ---
+    ##--- Data for Shapley calc
+    #shapley_data = data[features_with_target]
+    #shapley_data = shapley_data.dropna()
+    #X_shapley = shapley_data.drop(["target"], axis=1)
+    #X_shapley["sex_isFemale"] = [1 if _x else 0 for _x in X_shapley["sex_isFemale"]]
+    #labels = X_shapley.columns
+    #X_shapley = np.array(X_shapley[features_to_use])
+    #y_shapley = np.array(shapley_data["target"].astype('int'))
+    ## ---
+
+    mapped_feature_names = list(map(lambda x: name_map.get(x, x), X.columns))
 
 
     # --- Split by patient id
@@ -97,45 +103,52 @@ if not load_data:
     if X.shape[0] == len(pids):
         print("Only unique patient ids")
 
-    data_0 = data[data['sex_isFemale'] == 0]
-    data_1 = data[data['sex_isFemale'] == 1]
-    #pids_0 = np.unique(data_0.index.values)
-    #pids_1 = np.unique(data_1.index.values)
+    train_pids, test_pids = train_test_split(pids, random_state=0, test_size=0.3)
+    strain_pids,valid_pids = train_test_split(train_pids, random_state=0)
+
+    # find the indexes of the samples from the patient ids
+    train_inds = np.where([p in train_pids for p in X.index.values])[0]
+    strain_inds = np.where([p in strain_pids for p in X.index.values])[0]
+    valid_inds = np.where([p in valid_pids for p in X.index.values])[0]
+    test_inds = np.where([p in test_pids for p in X.index.values])[0]
+
+    # create the split datasets
+    X_train = X.iloc[train_inds,:]
+    X_strain = X.iloc[strain_inds,:]
+    X_valid = X.iloc[valid_inds,:]
+    X_test = X.iloc[test_inds,:]
+    y_train = y[train_inds]
+    y_strain = y[strain_inds]
+    y_valid = y[valid_inds]
+    y_test = y[test_inds]
+
+    ## mean impute for linear and deep models
+    #imp = Imputer()
+    #imp.fit(X_strain)
+    #X_strain_imp = imp.transform(X_strain)
+    #X_train_imp = imp.transform(X_train)
+    #X_valid_imp = imp.transform(X_valid)
+    #X_test_imp = imp.transform(X_test)
+    #X_imp = imp.transform(X)
+    #
+    ## standardize
+    #scaler = StandardScaler()
+    #scaler.fit(X_strain_imp)
+    #X_strain_imp = scaler.transform(X_strain_imp)
+    #X_train_imp = scaler.transform(X_train_imp)
+    #X_valid_imp = scaler.transform(X_valid_imp)
+    #X_test_imp = scaler.transform(X_test_imp)
+    #X_imp = scaler.transform(X_imp)
+
+    test = X_test.copy()
+    test["target"] = y_test
+    train= X_train.copy()
+    train["target"] = y_train
+
+    train.to_csv("train_data_slundberg.csv")
+    test.to_csv("test_data_slundberg.csv")
 
 
-    # ==============================================
-    # TODO:
-    # calculate the shapley values of the predictions, the residuals, and the labels,
-    # both on the training set and the test set.
-    # hopefully find that blood pressure contributes to the residuals more in females (on the deployed model), when the model is trained only on males
-    # ==============================================
-
-    train_0 = data_0.sample(n=3500, random_state=1)
-    train_1 = data_1.sample(n=3500, random_state=1)
-    train = pd.concat([train_0, train_1])
-    #train.to_csv("train_data_5050.csv")
-
-    remainder_0 = data_0.drop(train_0.index)
-    remainder_1 = data_1.drop(train_1.index)
-
-
-    test_0 = remainder_0.sample(n=400, random_state=1)
-    test_1 = remainder_1.sample(n=4000, random_state=1)
-    test = pd.concat([test_0, test_1])
-    #test.to_csv("test_data_9010.csv")
-
-    # --- Sanity check
-    #List1 = test.index.values
-    #List2 = train.index.values
-    #print(any(item in List1 for item in List2))
-    #print(test.shape)
-    #print(train.shape)
-
-
-    X_train = train.drop(["target"], axis=1)
-    X_test = test.drop(["target"], axis=1)
-    y_train = train["target"].astype('int')
-    y_test = test["target"].astype('int')
 # ---
 # =============================================================================
 
@@ -158,7 +171,6 @@ if load_data:
     convert_dict = {"sex_isFemale": float,
             "age" : float
             }
-
     X_shapley = X_shapley.astype(convert_dict)
     X_shapley = np.array(X_shapley)
     y_shapley = np.array(shapley_data["target"].astype('float'))
@@ -190,26 +202,6 @@ def c_statistic_harrell(pred, labels):
     return matches/total
 
 
-if Pred:
-    modelname = "retrained_full_model.dat"
-    #modelname = "test.dat"
-
-    # --- Try to load model from file
-    if os.path.isfile(modelname):
-        xgb_model = xgboost.Booster()
-        xgb_model.load_model(modelname)
-        print("Loaded model from file. Not training!")
-
-    #X_test, _, y_test, _ = train_test_split(X_test, y_test, test_size=0.01, random_state=123)
-    preds = xgb_model.predict(xgboost.DMatrix(X_test))
-    bces = [bce(_y, _p) for _y, _p in zip(y_test, preds)]
-    plt.scatter(y_test, (np.log(preds)), c=bces, cmap='viridis')
-    plt.colorbar()
-    plt.xlabel("y_test")
-    plt.ylabel("log preds")
-    plt.show()
-    print(c_statistic_harrell(preds, y_test))
-
 # === Shapley:
 if Shapley:
     sys.path.insert(0, "../../../sunnies/Python")
@@ -227,9 +219,6 @@ if Shapley:
 
 # === XGBOOST:
 if XGBoost:
-    modelname = "retrained_full_model.dat"
-    #modelname = "test.dat"
-
     # --- Try to load model from file
     if os.path.isfile(modelname):
         xgb_model = xgboost.Booster()
@@ -303,4 +292,20 @@ if XGBoost:
     pl.draw()
     pl.show()
 
+
+if Pred:
+    # --- Try to load model from file
+    if os.path.isfile(modelname):
+        xgb_model = xgboost.Booster()
+        xgb_model.load_model(modelname)
+        print("Loaded model from file. Not training!")
+
+    preds = xgb_model.predict(xgboost.DMatrix(X_test))
+    bces = [bce(_y, _p) for _y, _p in zip(y_test, preds)]
+    plt.scatter(y_test, (np.log(preds)), c=bces, cmap='viridis')
+    plt.colorbar()
+    plt.xlabel("y_test")
+    plt.ylabel("log preds")
+    plt.show()
+    print(c_statistic_harrell(preds, y_test))
 

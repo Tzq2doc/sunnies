@@ -192,4 +192,4 @@ def c_statistic_harrell(pred, labels):
                 if pred[j] > pred[i]:
                     matches += 1
     return matches/total
-
+print(c_statistic_harrell(xgb_model.predict(X_test), y_test))
