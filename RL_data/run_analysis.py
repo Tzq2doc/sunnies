@@ -18,7 +18,7 @@ import sys
 
 
 
-load_data = False
+load_data = True
 Shapley = False
 XGBoost = True
 
@@ -176,6 +176,11 @@ mapped_feature_names = list(map(lambda x: name_map.get(x, x), X.columns))
 # === Shapley:
 if Shapley:
     sys.path.insert(0, "../../../sunnies/Python")
+
+    import shapley
+    x_range = list(range(X_shapley.shape[1])
+    print(shapley.calc_shapley_values(X_shapley, y_shapley, x_range, "r2"))
+
     from xgb_regressor import display_shapley
     display_shapley(X_shapley, y_shapley, cf=["dcor", "r2"], xlabels=labels)
     #display_shapley(X_shapley, y_shapley, cf=["dcor", "aidc", "r2", "hsic"], xlabels=labels)
@@ -235,19 +240,11 @@ if XGBoost:
 
     # === SUMMARY PLOTS
     explainer = shap.TreeExplainer(xgb_model)
-    print(explainer)
-    print(1)
     xgb_shap = explainer.shap_values(X)
-    print(xgb_shap)
-    print(2)
     xgb_shap_interaction = shap.TreeExplainer(xgb_model).shap_interaction_values(X)
-    print(3)
     shap.dependence_plot(("Age", "Sex"), xgb_shap_interaction, X, feature_names=np.array(mapped_feature_names), show=False)
-    print(4)
     #pl.savefig("raw_figures/nhanes_age_sex_interaction.pdf", dpi=400)
-    pl.show()
-    #pl.draw()
-    sys.exit()
+    pl.draw()
 
     shap.dependence_plot(("Age", "Sex"), xgb_shap_interaction, X, feature_names=np.array(mapped_feature_names), show=False)
     pl.draw()
