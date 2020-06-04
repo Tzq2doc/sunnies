@@ -194,34 +194,6 @@ def c_statistic_harrell(pred, labels):
 
 
 
-# === Shapley:
-if Shapley:
-    sys.path.insert(0, "../../../sunnies/Python")
-    from xgb_regressor import display_shapley
-    import shapley
-
-    #--- Calculate Shapley values
-    d = X_shapley.shape[1]
-    x_range = list(range(d))
-    for _cf in ["dcor", "aidc", "r2", "hsic"]:
-        print(_cf)
-        _sfilename = "shapley_{0}_{1}.pickle".format(_cf, modelname)
-
-        if os.path.isfile(_sfilename):
-            with open(_sfilename, 'rb') as _f:
-                _shapley_values = pickle.load(_f)
-        else:
-            _shapley_values = shapley.calc_shapley_values(X_shapley, y_shapley, x_range, _cf)
-            with open(_sfilename, 'wb') as _f:
-                pickle.dump(shapley_values, _f)
-
-        plt.bar(x_range + 0.1*_n*numpy.ones(d), _shapley_values, alpha=0.5,
-                label=_cf, width=0.1)
-
-    ax.set_xticks(x_range)
-    ax.set_xticklabels(xlabels, rotation=90)
-
-    plt.show()
 
 
 # === XGBOOST:
@@ -310,3 +282,59 @@ if Pred:
     plt.show()
 
     #print(c_statistic_harrell(preds, y_test))
+
+# === Shapley:
+if Shapley:
+    sys.path.insert(0, "../../../sunnies/Python")
+    from xgb_regressor import display_shapley
+    import shapley
+
+    #--- Calculate Shapley values
+    d = X_shapley.shape[1]
+    x_range = list(range(d))
+    for _cf in ["dcor", "aidc", "r2", "hsic"]:
+        print(_cf)
+        _sfilename = "shapley_{0}_{1}.pickle".format(_cf, modelname)
+
+        if os.path.isfile(_sfilename):
+            with open(_sfilename, 'rb') as _f:
+                _shapley_values = pickle.load(_f)
+        else:
+            _shapley_values = shapley.calc_shapley_values(X_shapley, y_shapley, x_range, _cf)
+            with open(_sfilename, 'wb') as _f:
+                pickle.dump(_shapley_values, _f)
+
+        plt.bar(x_range + 0.1*_n*numpy.ones(d), _shapley_values, alpha=0.5,
+                label=_cf, width=0.1)
+
+    plt.title("Shapley decomposition using data and target")
+    ax.set_xticks(x_range)
+    ax.set_xticklabels(xlabels, rotation=90)
+
+    plt.show()
+
+    if Pred:
+        X_shapley_pred = X_test.copy()
+        X_shapley_pred["sex_isFemale"] = [1 if _x else 0 for _x in X_shapley_pred["sex_isFemale"]]
+        labels = X_shapley_pred.columns
+        X_shapley_pred = np.array(X_shapley_pred[shapley_features])
+        for _cf in ["dcor", "aidc", "r2", "hsic"]:
+            print(_cf)
+            _sfilename = "shapley_pred_{0}_{1}.pickle".format(_cf, modelname)
+
+            if os.path.isfile(_sfilename):
+                with open(_sfilename, 'rb') as _f:
+                    _shapley_values = pickle.load(_f)
+            else:
+                _shapley_values = shapley.calc_shapley_values(X_shapley_pred, preds, x_range, _cf)
+            with open(_sfilename, 'wb') as _f:
+                pickle.dump(_shapley_values, _f)
+
+        plt.bar(x_range + 0.1*_n*numpy.ones(d), _shapley_values, alpha=0.5,
+                label=_cf, width=0.1)
+
+    plt.title("Shapley decomposition using data and xgb predictions")
+    ax.set_xticks(x_range)
+    ax.set_xticklabels(xlabels, rotation=90)
+
+    plt.show()
