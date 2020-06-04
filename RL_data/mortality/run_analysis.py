@@ -22,7 +22,7 @@ modelname = "retrained_full_model.dat"
 #modelname = "test.dat"
 
 load_data = True
-Shapley = False
+Shapley = True
 Pred = True
 Shap = False
 
@@ -193,16 +193,6 @@ def c_statistic_harrell(pred, labels):
     return matches/total
 
 
-if Pred:
-
-    preds = xgb_model.predict(xgboost.DMatrix(X_test))
-    bces = [bce(_y, _p) for _y, _p in zip(y_test, preds)]
-    plt.scatter(y_test, (np.log(preds)), c=bces, cmap='viridis')
-    plt.colorbar()
-    plt.xlabel("y_test")
-    plt.ylabel("log preds")
-    plt.show()
-    print(c_statistic_harrell(preds, y_test))
 
 # === Shapley:
 if Shapley:
@@ -215,11 +205,11 @@ if Shapley:
     x_range = list(range(d))
     for _cf in ["dcor", "aidc", "r2", "hsic"]:
         print(_cf)
-        _sfilename = "shapley_{0]_{1}.pickle".format(_cf, modelname)
+        _sfilename = "shapley_{0}_{1}.pickle".format(_cf, modelname)
 
-        if os.file.exists(_sfilename):
+        if os.path.isfile(_sfilename):
             with open(_sfilename, 'rb') as _f:
-            _shapley_values = pickle.load(_f)
+                _shapley_values = pickle.load(_f)
         else:
             _shapley_values = shapley.calc_shapley_values(X_shapley, y_shapley, x_range, _cf)
             with open(_sfilename, 'wb') as _f:
@@ -310,3 +300,13 @@ if Shap:
     pl.show()
 
 
+if Pred:
+    preds = xgb_model.predict(xgboost.DMatrix(X_test))
+    bces = [bce(_y, _p) for _y, _p in zip(y_test, preds)]
+    plt.scatter(y_test, (np.log(preds)), c=bces, cmap='viridis')
+    plt.colorbar()
+    plt.xlabel("y_test")
+    plt.ylabel("log preds")
+    plt.show()
+
+    #print(c_statistic_harrell(preds, y_test))
