@@ -18,19 +18,22 @@ import sys
 
 
 
+modelname = "retrained_full_model.dat"
+#modelname = "test.dat"
+
 load_data = True
 Shapley = False
 Pred = True
-XGBoost = False
+Shap = False
 
-features_to_use = [
+shapley_features = [
     "sex_isFemale",
     "age",
     "systolic_blood_pressure",
     "bmi",
     "white_blood_cells",
     ]
-features_with_target = features_to_use + ["target"]
+features_with_target = shapley_features + ["target"]
 
 name_map = {
     "sex_isFemale": "Sex",
@@ -87,7 +90,7 @@ if not load_data:
     X_shapley = shapley_data.drop(["target"], axis=1)
     X_shapley["sex_isFemale"] = [1 if _x else 0 for _x in X_shapley["sex_isFemale"]]
     labels = X_shapley.columns
-    X_shapley = np.array(X_shapley[features_to_use])
+    X_shapley = np.array(X_shapley[shapley_features])
     y_shapley = np.array(shapley_data["target"].astype('int'))
     # ---
 
@@ -191,16 +194,7 @@ def c_statistic_harrell(pred, labels):
 
 
 if Pred:
-    modelname = "retrained_full_model.dat"
-    #modelname = "test.dat"
 
-    # --- Try to load model from file
-    if os.path.isfile(modelname):
-        xgb_model = xgboost.Booster()
-        xgb_model.load_model(modelname)
-        print("Loaded model from file. Not training!")
-
-    #X_test, _, y_test, _ = train_test_split(X_test, y_test, test_size=0.01, random_state=123)
     preds = xgb_model.predict(xgboost.DMatrix(X_test))
     bces = [bce(_y, _p) for _y, _p in zip(y_test, preds)]
     plt.scatter(y_test, (np.log(preds)), c=bces, cmap='viridis')
@@ -213,68 +207,80 @@ if Pred:
 # === Shapley:
 if Shapley:
     sys.path.insert(0, "../../../sunnies/Python")
-
-    import shapley
-    x_range = list(range(X_shapley.shape[1]))
-    print(shapley.calc_shapley_values(X_shapley, y_shapley, x_range, "r2"))
-
     from xgb_regressor import display_shapley
-    display_shapley(X_shapley, y_shapley, cf=["dcor", "r2"], xlabels=labels)
-    #display_shapley(X_shapley, y_shapley, cf=["dcor", "aidc", "r2", "hsic"], xlabels=labels)
-    #display_shapley(X_shapley, y_shapley, cf=["r2"], xlabels=labels)
+    import shapley
+
+    #--- Calculate Shapley values
+    d = X_shapley.shape[1]
+    x_range = list(range(d))
+    for _cf in ["dcor", "aidc", "r2", "hsic"]:
+        print(_cf)
+        _sfilename = "shapley_{0]_{1}.pickle".format(_cf, modelname)
+
+        if os.file.exists(_sfilename):
+            with open(_sfilename, 'rb') as _f:
+            _shapley_values = pickle.load(_f)
+        else:
+            _shapley_values = shapley.calc_shapley_values(X_shapley, y_shapley, x_range, _cf)
+            with open(_sfilename, 'wb') as _f:
+                pickle.dump(shapley_values, _f)
+
+        plt.bar(x_range + 0.1*_n*numpy.ones(d), _shapley_values, alpha=0.5,
+                label=_cf, width=0.1)
+
+    ax.set_xticks(x_range)
+    ax.set_xticklabels(xlabels, rotation=90)
+
     plt.show()
 
 
 # === XGBOOST:
-if XGBoost:
-    modelname = "retrained_full_model.dat"
-    #modelname = "test.dat"
+# --- Try to load model from file
+if os.path.isfile(modelname):
+    xgb_model = xgboost.Booster()
+    xgb_model.load_model(modelname)
+    print("Loaded model from file. Not training!")
 
-    # --- Try to load model from file
-    if os.path.isfile(modelname):
-        xgb_model = xgboost.Booster()
-        xgb_model.load_model(modelname)
-        print("Loaded model from file. Not training!")
+else:
+    X_train, X_valid, y_train, y_valid= train_test_split(X_train, y_train, test_size=0.2, random_state=123)
 
-    else:
-        X_train, X_valid, y_train, y_valid= train_test_split(X_train, y_train, test_size=0.2, random_state=123)
+    params = {
+        "learning_rate": 0.001,
+        "n_estimators": 6765,
+        "max_depth": 4,
+        "subsample": 0.5,
+        "reg_lambda": 5.5,
+        "reg_alpha": 0,
+        "colsample_bytree": 1
+    }
 
-        params = {
-            "learning_rate": 0.001,
-            "n_estimators": 6765,
-            "max_depth": 4,
-            "subsample": 0.5,
-            "reg_lambda": 5.5,
-            "reg_alpha": 0,
-            "colsample_bytree": 1
-        }
+    #xgb_model = xgboost.XGBRegressor()
+    xgb_model = xgboost.XGBRegressor(
+        max_depth=params["max_depth"],
+        n_estimators=params["n_estimators"],
+        learning_rate=params["learning_rate"],#math.pow(10, params["learning_rate"]),
+        subsample=params["subsample"],
+        reg_lambda=params["reg_lambda"],
+        colsample_bytree=params["colsample_bytree"],
+        reg_alpha=params["reg_alpha"],
+        n_jobs=16,
+        random_state=1,
+        objective="survival:cox",
+        base_score=1
+    )
 
-        #xgb_model = xgboost.XGBRegressor()
-        xgb_model = xgboost.XGBRegressor(
-            max_depth=params["max_depth"],
-            n_estimators=params["n_estimators"],
-            learning_rate=params["learning_rate"],#math.pow(10, params["learning_rate"]),
-            subsample=params["subsample"],
-            reg_lambda=params["reg_lambda"],
-            colsample_bytree=params["colsample_bytree"],
-            reg_alpha=params["reg_alpha"],
-            n_jobs=16,
-            random_state=1,
-            objective="survival:cox",
-            base_score=1
-        )
+    xgb_model.fit(X_train, y_train,
+            verbose=500,
+            eval_set=[(X_valid, y_valid)],
+            #eval_metric="logloss",
+            early_stopping_rounds=10000
+    )
 
-        xgb_model.fit(X_train, y_train,
-                verbose=500,
-                eval_set=[(X_valid, y_valid)],
-                #eval_metric="logloss",
-                early_stopping_rounds=10000
-        )
+    # --- Save model to file
+    xgb_model.save_model(modelname)
+    print("Saved model to file {0}".format(modelname))
 
-        # --- Save model to file
-        xgb_model.save_model(modelname)
-        print("Saved model to file {0}".format(modelname))
-
+if Shap:
     # === SUMMARY PLOTS
     explainer = shap.TreeExplainer(xgb_model)
     xgb_shap = explainer.shap_values(X)
