@@ -18,8 +18,8 @@ import sys
 
 
 
-#modelname = "retrained_full_model.dat"
-modelname = "test.dat"
+modelname = "retrained_full_model.dat"
+#modelname = "test.dat"
 
 load_data = False
 Shapley = True
@@ -119,19 +119,26 @@ if not load_data:
     # hopefully find that blood pressure contributes to the residuals more in females (on the deployed model), when the model is trained only on males
     # ==============================================
 
-    train_0 = data_0.sample(n=2000, random_state=1)
-    train_1 = data_1.sample(n=2000, random_state=1)
+    train_0 = data_0.sample(n=400, random_state=1)
+    train_1 = data_1.sample(n=4000, random_state=1)
     train = pd.concat([train_0, train_1])
-    #train.to_csv("train_data_5050.csv")
+    train.to_csv("train_data_9010.csv")
 
     remainder_0 = data_0.drop(train_0.index)
     remainder_1 = data_1.drop(train_1.index)
 
 
-    test_0 = remainder_0.sample(n=100, random_state=1)
-    test_1 = remainder_1.sample(n=1000, random_state=1)
+    test_0 = remainder_0.sample(n=1142, random_state=1)
+    test_1 = remainder_1.sample(n=1142, random_state=1)
     test = pd.concat([test_0, test_1])
-    #test.to_csv("test_data_9010.csv")
+    test.to_csv("test_data_5050.csv")
+
+    print("Train data: {0}".format(train.shape))
+    print("Class 0: {0}".format(train_0.shape))
+    print("Class 1: {0}".format(train_1.shape))
+    print("Test data: {0}".format(test.shape))
+    print("Class 0: {0}".format(test_0.shape))
+    print("Class 1: {0}".format(test_1.shape))
 
     # --- Sanity check
     #List1 = test.index.values
@@ -149,8 +156,8 @@ if not load_data:
 # =============================================================================
 
 if load_data:
-    train_file = "train_data_5050.csv"
-    test_file = "test_data_9010.csv"
+    train_file = "train_data_9010.csv"
+    test_file = "test_data_5050.csv"
 
     train = pd.read_csv(train_file)
     test = pd.read_csv(test_file)
@@ -223,20 +230,20 @@ else:
         "colsample_bytree": 1
     }
 
-    xgb_model = xgboost.XGBRegressor()
-    #xgb_model = xgboost.XGBRegressor(
-    #    max_depth=params["max_depth"],
-    #    n_estimators=params["n_estimators"],
-    #    learning_rate=params["learning_rate"],#math.pow(10, params["learning_rate"]),
-    #    subsample=params["subsample"],
-    #    reg_lambda=params["reg_lambda"],
-    #    colsample_bytree=params["colsample_bytree"],
-    #    reg_alpha=params["reg_alpha"],
-    #    n_jobs=16,
-    #    random_state=1,
-    #    objective="survival:cox",
-    #    base_score=1
-    #)
+    #xgb_model = xgboost.XGBRegressor()
+    xgb_model = xgboost.XGBRegressor(
+        max_depth=params["max_depth"],
+        n_estimators=params["n_estimators"],
+        learning_rate=params["learning_rate"],#math.pow(10, params["learning_rate"]),
+        subsample=params["subsample"],
+        reg_lambda=params["reg_lambda"],
+        colsample_bytree=params["colsample_bytree"],
+        reg_alpha=params["reg_alpha"],
+        n_jobs=16,
+        random_state=1,
+        objective="survival:cox",
+        base_score=1
+    )
 
     xgb_model.fit(X_train, y_train,
             verbose=500,
@@ -259,12 +266,15 @@ if Shapley:
     from xgb_regressor import display_shapley
     import shapley
 
+    print(y_shapley)
+    print(preds)
+    print(np.log(abs(preds)))
+
     # --- On data
     d = X_shapley.shape[1]
     x_range = list(range(d))
-    _, ax = plt.subplots()
 
-    print(y_shapley)
+    _, ax = plt.subplots()
     if np.isnan(X_shapley).any():
         print("Data contains nan. Exiting")
         sys.exit()
@@ -296,6 +306,7 @@ if Shapley:
     X_shapley_pred["sex_isFemale"] = [1 if _x else 0 for _x in X_shapley_pred["sex_isFemale"]]
     labels = X_shapley_pred.columns
     X_shapley_pred = np.array(X_shapley_pred[shapley_features])
+
     _, ax = plt.subplots()
     if np.isnan(X_shapley_pred).any():
         print("Data contains nan. Exiting")
@@ -327,6 +338,9 @@ if Shapley:
     # --- On residuals
     _, ax = plt.subplots()
     residuals = y_test - preds
+    print(X_shapley_pred.shape)
+    print(residuals.shape)
+
     if np.isnan(X_shapley_pred).any():
         print("Data contains nan. Exiting")
         sys.exit()
