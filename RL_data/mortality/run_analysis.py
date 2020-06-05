@@ -375,6 +375,7 @@ if Pred:
     bces = [bce(_y, _p) for _y, _p in zip(y_test, preds)]
     plt.scatter(y_test, (np.log(preds)), c=bces, cmap='viridis')
     plt.colorbar()
+    cbar.set_label(BCE)
     plt.xlabel("y_test")
     plt.ylabel("log preds")
     plt.show()
