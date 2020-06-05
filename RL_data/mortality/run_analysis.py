@@ -281,7 +281,7 @@ if Shapley:
 
     for _n, _cf in enumerate(["dcor", "r2"]):
         print(_cf)
-        _sfilename = "shapley_{0}_{1}.pickle".format(_cf, modelname)
+        _sfilename = "shapley_expl_{0}_{1}.pickle".format(_cf, modelname)
 
         if os.path.isfile(_sfilename):
             with open(_sfilename, 'rb') as _f:
