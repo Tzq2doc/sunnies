@@ -18,12 +18,12 @@ import sys
 
 
 
-modelname = "retrained_full_model.dat"
-#modelname = "test.dat"
+#modelname = "retrained_full_model.dat"
+modelname = "test.dat"
 
-load_data = True
+load_data = False
 Shapley = True
-Pred = True
+Pred = False
 Shap = False
 
 shapley_features = [
@@ -52,6 +52,12 @@ name_map = {
     "urine_albumin_isNegative": "Albumin present in urine",
     "serum_protein": "Blood protein"
 }
+drop = ["creatinine", "BUN", "potassium", "sodium", "total_bilirubin",
+        "segmented_neutrophils", "lymphocytes", "monocytes", "eosinophils",
+        "basophils", "band_neutrophils", "calcium", "SGOT",
+        "alkaline_phosphatase", "uric_acid", "sedimentation_rate",
+        "red_blood_cells", "serum_protein"]
+
 # =============================================================================
 # ---
 if not load_data:
@@ -81,19 +87,19 @@ if not load_data:
     X = X.iloc[rows,:]
     y = y[rows]
 
-    data = X.copy()
+    data = X.drop(drop, axis=1)
     data["target"] = y
+    data = data.dropna()
 
     #--- Data for Shapley calc
     shapley_data = data[features_with_target]
-    shapley_data = shapley_data.dropna()
+    #shapley_data = shapley_data.dropna()
     X_shapley = shapley_data.drop(["target"], axis=1)
     X_shapley["sex_isFemale"] = [1 if _x else 0 for _x in X_shapley["sex_isFemale"]]
     labels = X_shapley.columns
     X_shapley = np.array(X_shapley[shapley_features])
     y_shapley = np.array(shapley_data["target"].astype('int'))
     # ---
-
 
     # --- Split by patient id
     pids = np.unique(X.index.values)
@@ -113,8 +119,8 @@ if not load_data:
     # hopefully find that blood pressure contributes to the residuals more in females (on the deployed model), when the model is trained only on males
     # ==============================================
 
-    train_0 = data_0.sample(n=3500, random_state=1)
-    train_1 = data_1.sample(n=3500, random_state=1)
+    train_0 = data_0.sample(n=2000, random_state=1)
+    train_1 = data_1.sample(n=2000, random_state=1)
     train = pd.concat([train_0, train_1])
     #train.to_csv("train_data_5050.csv")
 
@@ -122,8 +128,8 @@ if not load_data:
     remainder_1 = data_1.drop(train_1.index)
 
 
-    test_0 = remainder_0.sample(n=400, random_state=1)
-    test_1 = remainder_1.sample(n=4000, random_state=1)
+    test_0 = remainder_0.sample(n=100, random_state=1)
+    test_1 = remainder_1.sample(n=1000, random_state=1)
     test = pd.concat([test_0, test_1])
     #test.to_csv("test_data_9010.csv")
 
@@ -148,13 +154,18 @@ if load_data:
 
     train = pd.read_csv(train_file)
     test = pd.read_csv(test_file)
+
+    print(train.shape)
+    train = train.dropna()
+    print(train.shape)
+    test = test.dropna()
     #print(train.head())
     #print(test.head())
 
     #--- Data for Shapley calc
     shapley_data = pd.concat([train, test])
     shapley_data = shapley_data[features_with_target]
-    shapley_data = shapley_data.dropna()
+    #shapley_data = shapley_data.dropna()
     X_shapley = shapley_data.drop(["target"], axis=1)
     X_shapley["sex_isFemale"] = [1 if _x else 0 for _x in X_shapley["sex_isFemale"]]
     labels = X_shapley.columns
@@ -166,7 +177,6 @@ if load_data:
     X_shapley = np.array(X_shapley)
     y_shapley = np.array(shapley_data["target"].astype('float'))
     # ---
-
 
     X_train = train.drop(["target"], axis=1)
     X_test = test.drop(["target"], axis=1)
@@ -192,16 +202,13 @@ def c_statistic_harrell(pred, labels):
                     matches += 1
     return matches/total
 
-
-
-
-
 # === XGBOOST:
 # --- Try to load model from file
 if os.path.isfile(modelname):
     xgb_model = xgboost.Booster()
     xgb_model.load_model(modelname)
     print("Loaded model from file. Not training!")
+    preds = xgb_model.predict(xgboost.DMatrix(X_test))
 
 else:
     X_train, X_valid, y_train, y_valid= train_test_split(X_train, y_train, test_size=0.2, random_state=123)
@@ -216,20 +223,20 @@ else:
         "colsample_bytree": 1
     }
 
-    #xgb_model = xgboost.XGBRegressor()
-    xgb_model = xgboost.XGBRegressor(
-        max_depth=params["max_depth"],
-        n_estimators=params["n_estimators"],
-        learning_rate=params["learning_rate"],#math.pow(10, params["learning_rate"]),
-        subsample=params["subsample"],
-        reg_lambda=params["reg_lambda"],
-        colsample_bytree=params["colsample_bytree"],
-        reg_alpha=params["reg_alpha"],
-        n_jobs=16,
-        random_state=1,
-        objective="survival:cox",
-        base_score=1
-    )
+    xgb_model = xgboost.XGBRegressor()
+    #xgb_model = xgboost.XGBRegressor(
+    #    max_depth=params["max_depth"],
+    #    n_estimators=params["n_estimators"],
+    #    learning_rate=params["learning_rate"],#math.pow(10, params["learning_rate"]),
+    #    subsample=params["subsample"],
+    #    reg_lambda=params["reg_lambda"],
+    #    colsample_bytree=params["colsample_bytree"],
+    #    reg_alpha=params["reg_alpha"],
+    #    n_jobs=16,
+    #    random_state=1,
+    #    objective="survival:cox",
+    #    base_score=1
+    #)
 
     xgb_model.fit(X_train, y_train,
             verbose=500,
@@ -238,9 +245,127 @@ else:
             early_stopping_rounds=10000
     )
 
+    preds = xgb_model.predict(X_test)
+
     # --- Save model to file
     xgb_model.save_model(modelname)
     print("Saved model to file {0}".format(modelname))
+
+
+
+# === Shapley:
+if Shapley:
+    sys.path.insert(0, "../../../sunnies/Python")
+    from xgb_regressor import display_shapley
+    import shapley
+
+    # --- On data
+    d = X_shapley.shape[1]
+    x_range = list(range(d))
+    _, ax = plt.subplots()
+
+    print(y_shapley)
+    if np.isnan(X_shapley).any():
+        print("Data contains nan. Exiting")
+        sys.exit()
+
+    for _n, _cf in enumerate(["dcor", "r2"]):
+        print(_cf)
+        _sfilename = "shapley_{0}_{1}.pickle".format(_cf, modelname)
+
+        if os.path.isfile(_sfilename):
+            with open(_sfilename, 'rb') as _f:
+                _shapley_values = pickle.load(_f)
+        else:
+            _shapley_values = shapley.calc_shapley_values(X_shapley, y_shapley, x_range, _cf)
+            with open(_sfilename, 'wb') as _f:
+                pickle.dump(_shapley_values, _f)
+
+        print(_shapley_values)
+        plt.bar(x_range + 0.1*_n*np.ones(d), _shapley_values, alpha=0.5,
+                label=_cf, width=0.1)
+
+    plt.title("Target")
+    plt.legend()
+    ax.set_xticks(x_range)
+    ax.set_xticklabels(labels, rotation=90)
+    plt.draw()
+
+    # --- On predictions
+    X_shapley_pred = X_test.copy()
+    X_shapley_pred["sex_isFemale"] = [1 if _x else 0 for _x in X_shapley_pred["sex_isFemale"]]
+    labels = X_shapley_pred.columns
+    X_shapley_pred = np.array(X_shapley_pred[shapley_features])
+    _, ax = plt.subplots()
+    if np.isnan(X_shapley_pred).any():
+        print("Data contains nan. Exiting")
+        sys.exit()
+
+    for _n, _cf in enumerate(["dcor", "r2"]):
+        print(_cf)
+        _sfilename = "shapley_pred_{0}_{1}.pickle".format(_cf, modelname)
+
+        if os.path.isfile(_sfilename):
+            with open(_sfilename, 'rb') as _f:
+                _shapley_values = pickle.load(_f)
+        else:
+            _shapley_values = shapley.calc_shapley_values(X_shapley_pred, preds, x_range, _cf)
+        with open(_sfilename, 'wb') as _f:
+            pickle.dump(_shapley_values, _f)
+
+        print(_shapley_values)
+        plt.bar(x_range + 0.1*_n*np.ones(d), _shapley_values, alpha=0.5,
+                label=_cf, width=0.1)
+
+    plt.title("Predictions")
+    plt.legend()
+    ax.set_xticks(x_range)
+    ax.set_xticklabels(labels, rotation=90)
+
+    plt.draw()
+
+    # --- On residuals
+    _, ax = plt.subplots()
+    residuals = y_test - preds
+    if np.isnan(X_shapley_pred).any():
+        print("Data contains nan. Exiting")
+        sys.exit()
+
+    for _n, _cf in enumerate(["dcor", "r2"]):
+        print(_cf)
+        _sfilename = "shapley_res_{0}_{1}.pickle".format(_cf, modelname)
+
+        if os.path.isfile(_sfilename):
+            with open(_sfilename, 'rb') as _f:
+                _shapley_values = pickle.load(_f)
+        else:
+            _shapley_values = shapley.calc_shapley_values(X_shapley_pred,
+                    residuals, x_range, _cf)
+        with open(_sfilename, 'wb') as _f:
+            pickle.dump(_shapley_values, _f)
+
+        print(_shapley_values)
+        plt.bar(x_range + 0.1*_n*np.ones(d), _shapley_values, alpha=0.5,
+                label=_cf, width=0.1)
+
+    plt.title("Residuals")
+    plt.legend()
+    ax.set_xticks(x_range)
+    ax.set_xticklabels(labels, rotation=90)
+
+    plt.draw()
+
+plt.show()
+
+if Pred:
+    bces = [bce(_y, _p) for _y, _p in zip(y_test, preds)]
+    plt.scatter(y_test, (np.log(preds)), c=bces, cmap='viridis')
+    plt.colorbar()
+    plt.xlabel("y_test")
+    plt.ylabel("log preds")
+    plt.show()
+
+    #print(c_statistic_harrell(preds, y_test))
 
 if Shap:
     # === SUMMARY PLOTS
@@ -271,70 +396,3 @@ if Shap:
     pl.draw()
     pl.show()
 
-
-if Pred:
-    preds = xgb_model.predict(xgboost.DMatrix(X_test))
-    bces = [bce(_y, _p) for _y, _p in zip(y_test, preds)]
-    plt.scatter(y_test, (np.log(preds)), c=bces, cmap='viridis')
-    plt.colorbar()
-    plt.xlabel("y_test")
-    plt.ylabel("log preds")
-    plt.show()
-
-    #print(c_statistic_harrell(preds, y_test))
-
-# === Shapley:
-if Shapley:
-    sys.path.insert(0, "../../../sunnies/Python")
-    from xgb_regressor import display_shapley
-    import shapley
-
-    #--- Calculate Shapley values
-    d = X_shapley.shape[1]
-    x_range = list(range(d))
-    for _cf in ["dcor", "aidc", "r2", "hsic"]:
-        print(_cf)
-        _sfilename = "shapley_{0}_{1}.pickle".format(_cf, modelname)
-
-        if os.path.isfile(_sfilename):
-            with open(_sfilename, 'rb') as _f:
-                _shapley_values = pickle.load(_f)
-        else:
-            _shapley_values = shapley.calc_shapley_values(X_shapley, y_shapley, x_range, _cf)
-            with open(_sfilename, 'wb') as _f:
-                pickle.dump(_shapley_values, _f)
-
-        plt.bar(x_range + 0.1*_n*numpy.ones(d), _shapley_values, alpha=0.5,
-                label=_cf, width=0.1)
-
-    plt.title("Shapley decomposition using data and target")
-    ax.set_xticks(x_range)
-    ax.set_xticklabels(xlabels, rotation=90)
-
-    plt.show()
-
-    if Pred:
-        X_shapley_pred = X_test.copy()
-        X_shapley_pred["sex_isFemale"] = [1 if _x else 0 for _x in X_shapley_pred["sex_isFemale"]]
-        labels = X_shapley_pred.columns
-        X_shapley_pred = np.array(X_shapley_pred[shapley_features])
-        for _cf in ["dcor", "aidc", "r2", "hsic"]:
-            print(_cf)
-            _sfilename = "shapley_pred_{0}_{1}.pickle".format(_cf, modelname)
-
-            if os.path.isfile(_sfilename):
-                with open(_sfilename, 'rb') as _f:
-                    _shapley_values = pickle.load(_f)
-            else:
-                _shapley_values = shapley.calc_shapley_values(X_shapley_pred, preds, x_range, _cf)
-            with open(_sfilename, 'wb') as _f:
-                pickle.dump(_shapley_values, _f)
-
-        plt.bar(x_range + 0.1*_n*numpy.ones(d), _shapley_values, alpha=0.5,
-                label=_cf, width=0.1)
-
-    plt.title("Shapley decomposition using data and xgb predictions")
-    ax.set_xticks(x_range)
-    ax.set_xticklabels(xlabels, rotation=90)
-
-    plt.show()
