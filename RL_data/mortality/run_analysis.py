@@ -279,7 +279,7 @@ if Shapley:
         print("Data contains nan. Exiting")
         sys.exit()
 
-    for _n, _cf in enumerate(["dcor", "r2"]):
+    for _n, _cf in enumerate(["dcor", "r2", "hsic", "aidc"]):
         print(_cf)
         _sfilename = "shapley_expl_{0}_{1}.pickle".format(_cf, modelname)
 
@@ -312,7 +312,7 @@ if Shapley:
         print("Data contains nan. Exiting")
         sys.exit()
 
-    for _n, _cf in enumerate(["dcor", "r2"]):
+    for _n, _cf in enumerate(["dcor", "r2", "hsic", "aidc"]):
         print(_cf)
         _sfilename = "shapley_pred_{0}_{1}.pickle".format(_cf, modelname)
 
@@ -345,7 +345,7 @@ if Shapley:
         print("Data contains nan. Exiting")
         sys.exit()
 
-    for _n, _cf in enumerate(["dcor", "r2"]):
+    for _n, _cf in enumerate(["dcor", "r2", "hsic", "aidc"]):
         print(_cf)
         _sfilename = "shapley_res_{0}_{1}.pickle".format(_cf, modelname)
 
@@ -368,6 +368,11 @@ if Shapley:
     ax.set_xticklabels(labels, rotation=90)
 
     plt.draw()
+
+    _sfilename = "shapley_features_{0}".format(modelname)
+    if not os.path.isfile(_sfilename):
+        with open(_sfilename, 'wb') as _f:
+            pickle.dump(labels, _f)
 
 plt.show()
 
