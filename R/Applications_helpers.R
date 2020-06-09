@@ -67,3 +67,61 @@ visualise_missing <- function(Xh) {
   plots$p7 <- gg_miss_upset(Xh, nsets = 16)  
   return(plots)
 }
+
+
+# Calculates number of males n1m in the training set, where it is
+# assumed that we do not want to discard anybody.
+# n := number of people overall
+# nm := number of males overall
+# p1f := proportion of females to males in the training set
+# p2f := proportion of females to males in the test set
+calc_n1m_n1f <- function(n, nm, p1f, p2f) {
+  K1 <- p1f/(1-p1f)
+  K2 <- p2f/(1-p2f)
+  if (K1 == K2) {return(list(n1m = as.integer(nm/2), 
+                             n1f = as.integer((n-nm)/2)))}
+  if (p1f == 0) {return(list(n1m = nm, n1f = 0))}
+  if (p1f == 1) {return(list(n1m = 0, n1f = n - nm))}
+  n1m <- (n - nm*(K2+1))/(K1-K2)
+  list(n1m = as.integer(n1m), n1f = as.integer(K1*n1m))
+}
+#n <- 14264
+#nm <- 5765
+#p1f <- 0.5
+#p2f <- 0.9
+#calc_n1m(n, nm, p1f, p2f)
+
+
+# Splits the data proportionally using gender
+split_dat_gender <- function(dat, p1f, p2f) {
+  n <- nrow(dat)
+  male_index <- (dat[["sex_isFemale"]] == F)
+  nm <- sum(male_index)
+  n1mf <- calc_n1m_n1f(n, nm, p1f, p2f)
+  X_m <- dat[male_index,-1]
+  X_f <- dat[!male_index,-1]
+  y_m <- dat[male_index,1]
+  y_f <- dat[!male_index,1]
+  if (n1mf$n1f == 0) {
+    x_train <- X_m
+    x_test <- X_f
+    y_train <- y_m
+    y_test <- y_f
+  } else if (n1mf$n1m == 0) {
+    x_train <- X_f
+    x_test <- X_m
+    y_train <- y_f
+    y_test <- y_m
+  } else {
+    train_m <- sample(1:nrow(X_m), n1mf$n1m)
+    train_f <- sample(1:nrow(X_f), n1mf$n1f)
+    x_train <- rbind(X_m[train_m,], X_f[train_f,]) 
+    x_test <- rbind(X_m[-train_m,], X_f[-train_f,])
+    y_train <- c(y_m[train_m], y_f[train_f])
+    y_test <- c(y_m[-train_m], y_f[-train_f])
+  }
+  return(list(y_train = as.matrix(y_train), 
+              y_test = as.matrix(y_test), 
+              x_train = as.matrix(x_train), 
+              x_test = as.matrix(x_test)))
+}

@@ -37,6 +37,118 @@ split_dat <- function(dat, df = F) {
               y_test = y_test))
 }
 
+compare_label_shapleys <- function(sdat, features, 
+                                   feature_names,
+                                   legend = c("train","test")) {
+  s1 <- shapley(sdat$y_train, sdat$x_train[,features], utility = DC)
+  s2 <- shapley(sdat$y_test, sdat$x_test[,features], utility = DC)
+  s <- rbind(s1, s2)
+  colnames(s) <- feature_names
+  barplot(s,
+          xlab = "Feature", ylab = "Attribution",
+          col = c("black","gray"), beside = T)
+  legend(x = "topright", legend = legend, 
+         col = c("black","gray"), pch = c(15,15))
+}
+
+compare_DARRP <- function(sdat, xgbt, features, 
+                          feature_names, 
+                          utility = DC,
+                          sample_size = 1e3) {
+  samp_train <- 1:nrow(sdat$x_train)
+  samp_test <- 1:nrow(sdat$x_test)
+  if (!is.na(sample_size)) {
+    samp_train <- sample(samp_train, sample_size)
+    samp_test <- sample(samp_test, sample_size)
+  }
+  X1 <- sdat$x_test[samp_test,features,drop=F]
+  X2 <- sdat$x_train[samp_train,features,drop=F]
+  y1 <- as.matrix(sdat$y_test)[samp_test,,drop = F]
+  y2 <- as.matrix(sdat$y_train)[samp_train,,drop = F]
+  p1 <- as.matrix(xgbt$pred_test)[samp_test,,drop = F]
+  p2 <- as.matrix(xgbt$pred_train)[samp_train,,drop = F]
+  r1 <- as.matrix(xgbt$residuals_test)[samp_test,,drop = F]
+  r2 <- as.matrix(xgbt$residuals_train)[samp_train,,drop = F]
+  y <- rbind(y1,y2)
+  X <- rbind(X1,X2)
+  
+  s0 <- shapley(y, X, utility = utility)
+  s1 <- shapley(y1, X1, utility = utility)
+  s2 <- shapley(y2, X2, utility = utility)
+  s3 <- shapley(p1, X1, utility = utility)
+  s4 <- shapley(p2, X2, utility = utility)
+  s5 <- shapley(r1, X1, utility = utility)
+  s6 <- shapley(r2, X2, utility = utility)
+  s <- rbind(s0,s1,s2,s3,s4,s5,s6)
+  colnames(s) <- feature_names
+
+  return(s)
+}
+
+compare_DARRP_N <- function(sdat, xgbt, features, 
+                            feature_names, 
+                            utility = DC,
+                            sample_size = 1e3, N = 100) {
+  d <- length(features)
+  cd <- array(dim = c(7,d,N))
+  for (i in 1:N) {
+    cdi <- compare_DARRP(sdat, xgbt, features, 
+                         feature_names, utility = DC,
+                         sample_size = sample_size)
+    cd[,,i] <- cdi
+    
+  }
+  dimnames(cd) <- list(NULL, feature_names, NULL)
+  return(cd)
+}
+
+plot_compare_DARRP_N <- function(cdN, p = c(0.025,0.975), main) {
+   feature_names <- dimnames(cdN)[[2]]
+   cd <- apply(cdN, FUN = mean, MARGIN = c(1,2))
+   cd_L <- apply(cdN, FUN = quantile, MARGIN = c(1,2), probs = p[1])
+   cd_U <- apply(cdN, FUN = quantile, MARGIN = c(1,2), probs = p[2])
+
+   centers <- plot_compare_DARRP(cd, main = main)
+   arrows(centers, cd_L, centers, cd_U, 
+          lwd = 1.5, angle = 90, code = 3, length = 0.05)
+   segments(centers, cd_L, centers, cd_U, lwd = 1.5)
+}
+
+plot_compare_DARRP <- function(s, 
+     legend = c("ERDA all","ERDA test","ERDA train",
+                "PDA test", "PDA train", 
+                "RDA test","RDA train"),
+     leg_loc = "topright", main = "untitled") {
+  cols <- c("gray25","gray50","gray75",
+            "blue", "lightblue",
+            "darkred","red3")
+  centers <- barplot(s,
+               xlab = "Feature",
+               ylab = "Attribution",
+               col = cols,
+               beside = T,
+               main = main)
+  legend(x = leg_loc, legend = legend, 
+         col = cols, pch = rep(15,7))
+  centers
+}
+
+compare_DARRRP_N_gender <- function(
+  dat, p1f, p2f, sample_size = 1000, 
+  N = 100, features, feature_names) {
+  
+  sdat <- split_dat_gender(dat, p1f, p2f)
+  xgb <- basic_xgb_fit(sdat)
+  xgbt <- basic_xgb_test(xgb, sdat)
+  cdN <- compare_DARRP_N(sdat, xgbt, features = features, 
+                         feature_names = feature_names,
+                         sample_size = sample_size, N = N)
+  plot_compare_DARRP_N(cdN, main = paste0("p1f: ", p1f, ",  ",
+                                          "p2f: ", p2f))
+  return(list(cdN = cdN, xgb = xgb, xgbt = xgbt))
+}
+
+
 diagnostics <- function(sdat, xgbt, plot = "all", 
                         features = 1:ncol(sdat$x_test),
                         feature_names) {
@@ -152,8 +264,6 @@ basic_xgb_test <- function(bst, dat, plots = F) {
               residuals_test = residuals_test,
               residuals_train = residuals_train))
 }
-
-
 
 
 ## Utility of each feature alone, then utility of all features together
