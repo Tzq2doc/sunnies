@@ -51,8 +51,6 @@ sum(Xh[["sex_isFemale"]] == F)
 # None of the y values are missing
 any(!is.finite(y[[1]]))
 
-
-
 # Visualisations
 # NOTE: Proportion of patients that are missing 15+ vals: 0.5259763
 make_miss_plots <- F
@@ -101,6 +99,21 @@ fnams <- c("age", "PA", "SBP")
 
 ss <- 1000
 NN <- 100
+
+sdat3w <- split_dat_gender_3way(dat)
+
+sdat <- split_dat_gender_3way(dat)
+xgb <- basic_xgb_fit(sdat)
+xgbt <- basic_xgb_test(xgb, sdat, valid = T)
+compare_DARRP(sdat3w, xgbt, features = fts, 
+              feature_names = fnams, utility = DC,
+              sample_size = 100,
+              valid = T)
+
+cdN3way <- compare_DARRRP_N_gender_3way(
+  dat, sample_size = 1000, N = 100,
+  features = fts, feature_names = fnams)
+save(cdN3way, file = "run1_cdN3way.dat")
 
 cdN1000 <- compare_DARRRP_N_gender(
   dat, 1, 0, sample_size = ss, N = NN,
