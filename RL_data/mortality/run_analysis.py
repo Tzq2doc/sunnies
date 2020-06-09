@@ -21,7 +21,7 @@ import sys
 modelname = "retrained_full_model.dat"
 #modelname = "test.dat"
 
-load_data = False
+load_data =True
 Shapley = True
 Pred = False
 Shap = False
