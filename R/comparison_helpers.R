@@ -37,6 +37,245 @@ split_dat <- function(dat, df = F) {
               y_test = y_test))
 }
 
+# Splits the data proportionally using gender
+split_dat_gender <- function(dat, p1f, p2f) {
+  n <- nrow(dat)
+  male_index <- (dat[["sex_isFemale"]] == F)
+  nm <- sum(male_index)
+  n1mf <- calc_n1m_n1f(n, nm, p1f, p2f)
+  X_m <- dat[male_index,-1]
+  X_f <- dat[!male_index,-1]
+  y_m <- dat[male_index,1]
+  y_f <- dat[!male_index,1]
+  if (n1mf$n1f == 0) {
+    x_train <- X_m
+    x_test <- X_f
+    y_train <- y_m
+    y_test <- y_f
+  } else if (n1mf$n1m == 0) {
+    x_train <- X_f
+    x_test <- X_m
+    y_train <- y_f
+    y_test <- y_m
+  } else {
+    train_m <- sample(1:nrow(X_m), n1mf$n1m)
+    train_f <- sample(1:nrow(X_f), n1mf$n1f)
+    x_train <- rbind(X_m[train_m,], X_f[train_f,]) 
+    x_test <- rbind(X_m[-train_m,], X_f[-train_f,])
+    y_train <- c(y_m[train_m], y_f[train_f])
+    y_test <- c(y_m[-train_m], y_f[-train_f])
+  }
+  return(list(y_train = as.matrix(y_train), 
+              y_test = as.matrix(y_test), 
+              x_train = as.matrix(x_train), 
+              x_test = as.matrix(x_test)))
+}
+
+split_dat_gender_3way <- function(dat) {
+  n <- nrow(dat)
+  male_index <- which(dat[["sex_isFemale"]] == F)
+  nm <- length(male_index)
+  X_m <- dat[male_index,-1]
+  X_f <- dat[-male_index,-1]
+  y_m <- dat[male_index,1]
+  y_f <- dat[-male_index,1]
+  
+  train_m <- sample(1:nrow(X_m), as.integer(nm/2))
+  train_f <- sample(1:nrow(X_f), as.integer(nm/2))
+  x_train <- rbind(X_m[train_m,], X_f[train_f,])
+  x_test <- X_m[-train_m,]
+  x_valid <- X_f[-train_f,]
+  y_train <- c(y_m[train_m], y_f[train_f])
+  y_test <- y_m[-train_m]
+  y_valid <- y_f[-train_f]
+  return(list(y_train = as.matrix(y_train), 
+              y_test = as.matrix(y_test),
+              y_valid = as.matrix(y_valid),
+              x_train = as.matrix(x_train), 
+              x_test = as.matrix(x_test),
+              x_valid = as.matrix(x_valid)))
+}
+
+# Calculates number of males n1m in the training set, where it is
+# assumed that we do not want to discard anybody.
+# n := number of people overall
+# nm := number of males overall
+# p1f := proportion of females to males in the training set
+# p2f := proportion of females to males in the test set
+calc_n1m_n1f <- function(n, nm, p1f, p2f) {
+  K1 <- p1f/(1-p1f)
+  K2 <- p2f/(1-p2f)
+  if (K1 == K2) {return(list(n1m = as.integer(nm/2), 
+                             n1f = as.integer((n-nm)/2)))}
+  if (p1f == 0) {return(list(n1m = nm, n1f = 0))}
+  if (p1f == 1) {return(list(n1m = 0, n1f = n - nm))}
+  n1m <- (n - nm*(K2+1))/(K1-K2)
+  list(n1m = as.integer(n1m), n1f = as.integer(K1*n1m))
+}
+#n <- 14264
+#nm <- 5765
+#p1f <- 0.5
+#p2f <- 0.9
+#calc_n1m(n, nm, p1f, p2f)
+
+
+compare_label_shapleys <- function(sdat, features, 
+                                   feature_names,
+                                   legend = c("train","test")) {
+  s1 <- shapley(sdat$y_train, sdat$x_train[,features], utility = DC)
+  s2 <- shapley(sdat$y_test, sdat$x_test[,features], utility = DC)
+  s <- rbind(s1, s2)
+  colnames(s) <- feature_names
+  barplot(s,
+          xlab = "Feature", ylab = "Attribution",
+          col = c("black","gray"), beside = T)
+  legend(x = "topright", legend = legend, 
+         col = c("black","gray"), pch = c(15,15))
+}
+
+compare_DARRP <- function(sdat, xgbt, features, 
+                          feature_names, 
+                          utility = DC,
+                          sample_size = 1e3,
+                          valid = F) {
+  
+  if (valid & is.null(xgbt$pred_valid)) {stop(paste0("Make sure",
+    "xgbt holds validation set results when valid = TRUE"))}
+  samp_train <- 1:nrow(sdat$x_train)
+  samp_test <- 1:nrow(sdat$x_test)
+  samp_valid <- if(valid) {1:nrow(sdat$x_valid)} else {NULL}
+  if (!is.na(sample_size)) {
+    samp_train <- sample(samp_train, sample_size)
+    samp_test <- sample(samp_test, sample_size)
+    samp_valid <- if(valid) {sample(samp_valid, sample_size)} else {NULL}
+  }
+  X1 <- sdat$x_test[samp_test,features,drop=F]
+  X2 <- sdat$x_train[samp_train,features,drop=F]
+  X3 <- if(valid) {sdat$x_valid[samp_valid,features,drop=F]} else {NULL}
+  y1 <- as.matrix(sdat$y_test)[samp_test,,drop = F]
+  y2 <- as.matrix(sdat$y_train)[samp_train,,drop = F]
+  y3 <- if(valid) {as.matrix(sdat$y_valid)[samp_valid,,drop = F]} else {NULL}
+  p1 <- as.matrix(xgbt$pred_test)[samp_test,,drop = F]
+  p2 <- as.matrix(xgbt$pred_train)[samp_train,,drop = F]
+  p3 <- if(valid) {as.matrix(xgbt$pred_valid)[samp_valid,,drop = F]} else {NULL}
+  r1 <- as.matrix(xgbt$residuals_test)[samp_test,,drop = F]
+  r2 <- as.matrix(xgbt$residuals_train)[samp_train,,drop = F]
+  r3 <- if(valid) {as.matrix(xgbt$residuals_valid)[samp_valid,,drop = F]} else {NULL}
+  y <- rbind(y1,y2,y3)
+  X <- rbind(X1,X2,X3)
+  
+  s0 <- shapley(y, X, utility = utility)
+  s1 <- shapley(y1, X1, utility = utility)
+  s2 <- shapley(y2, X2, utility = utility)
+  s3 <- if (valid) {shapley(y3, X3, utility = utility)} else {NULL}
+  s4 <- shapley(p1, X1, utility = utility)
+  s5 <- shapley(p2, X2, utility = utility)
+  s6 <- if (valid) {shapley(p3, X3, utility = utility)} else {NULL}
+  s7 <- shapley(r1, X1, utility = utility)
+  s8 <- shapley(r2, X2, utility = utility)
+  s9 <- if (valid) {shapley(r3, X3, utility = utility)} else {NULL}
+  s <- rbind(s0,s1,s2,s3,s4,s5,s6,s7,s8,s9)
+  colnames(s) <- feature_names
+
+  return(s)
+}
+
+compare_DARRP_N <- function(sdat, xgbt, features, 
+                            feature_names, 
+                            utility = DC,
+                            sample_size = 1e3, N = 100,
+                            valid = F) {
+  d <- length(features)
+  cd <- array(dim = c(7 + valid*3,d,N))
+  for (i in 1:N) {
+    cdi <- compare_DARRP(sdat, xgbt, features, 
+                         feature_names, utility = DC,
+                         sample_size = sample_size,
+                         valid = valid)
+    cd[,,i] <- cdi
+    
+  }
+  dimnames(cd) <- list(NULL, feature_names, NULL)
+  return(cd)
+}
+
+plot_compare_DARRP_N <- function(cdN, p = c(0.025,0.975), main, valid = F) {
+   feature_names <- dimnames(cdN)[[2]]
+   cd <- apply(cdN, FUN = mean, MARGIN = c(1,2))
+   cd_L <- apply(cdN, FUN = quantile, MARGIN = c(1,2), probs = p[1])
+   cd_U <- apply(cdN, FUN = quantile, MARGIN = c(1,2), probs = p[2])
+
+   centers <- plot_compare_DARRP(cd, main = main, valid = valid)
+   arrows(centers, cd_L, centers, cd_U, 
+          lwd = 1.5, angle = 90, code = 3, length = 0.05)
+   segments(centers, cd_L, centers, cd_U, lwd = 1.5)
+}
+
+plot_compare_DARRP <- function(s,
+     leg_loc = "topright", main = "untitled",
+     valid = F) {
+  if(!valid) {
+    legend <- c("ERDA all","ERDA test","ERDA train",
+      "PDA test", "PDA train", 
+      "RDA test","RDA train")
+  } else {
+    legend <- c("ERDA all","ERDA test", "ERDA train", "ERDA valid",
+        "PDA test", "PDA train",  "PDA valid",
+        "RDA test","RDA train", "RDA valid")
+  }
+  if (!valid) {
+    cols <- c("gray25","gray50","gray75",
+      "blue", "lightblue",
+      "darkred","red3") 
+  } else {
+    cols <- c("gray25","gray50","gray75","gray100",
+        "blue", "lightblue","lightsteelblue2",
+        "darkred","red3","violetred3")
+  }
+  centers <- barplot(s,
+               xlab = "Feature",
+               ylab = "Attribution",
+               col = cols,
+               beside = T,
+               main = main)
+  legend(x = leg_loc, legend = legend, 
+         col = cols, pch = rep(15,7 + valid*3))
+  centers
+}
+
+compare_DARRRP_N_gender <- function(
+  dat, p1f, p2f, sample_size = 1000, 
+  N = 100, features, feature_names) {
+  
+  sdat <- split_dat_gender(dat, p1f, p2f)
+  xgb <- basic_xgb_fit(sdat)
+  xgbt <- basic_xgb_test(xgb, sdat)
+  cdN <- compare_DARRP_N(sdat, xgbt, features = features, 
+                         feature_names = feature_names,
+                         sample_size = sample_size, N = N)
+  plot_compare_DARRP_N(cdN, main = paste0("p1f: ", p1f, ",  ",
+                                          "p2f: ", p2f))
+  return(list(cdN = cdN, xgb = xgb, xgbt = xgbt))
+}
+
+compare_DARRRP_N_gender_3way <- function(
+  dat, sample_size = 1000, 
+  N = 100, features, feature_names) {
+  
+  sdat <- split_dat_gender_3way(dat)
+  xgb <- basic_xgb_fit(sdat)
+  xgbt <- basic_xgb_test(xgb, sdat, valid = T)
+  cdN <- compare_DARRP_N(sdat, xgbt, features = features, 
+                         feature_names = feature_names,
+                         sample_size = sample_size, N = N,
+                         valid = T)
+  plot_compare_DARRP_N(cdN, main = paste0("p1f: ", 0.5, ",  ",
+                                          "p2f: ", 0, ", ",
+                                          "p3f: ", 1), valid = T)
+  return(list(cdN = cdN, xgb = xgb, xgbt = xgbt))
+}
+
+
 diagnostics <- function(sdat, xgbt, plot = "all", 
                         features = 1:ncol(sdat$x_test),
                         feature_names) {
@@ -128,16 +367,18 @@ basic_xgb_fit <- function(dat, obj = "reg:squarederror") {
   return(bst)
 }
 
-basic_xgb_test <- function(bst, dat, plots = F) {
+basic_xgb_test <- function(bst, dat, plots = F, valid = F) {
   binary <- attr(bst, "binary")
   pred_test <- predict(bst, dat$x_test)
   pred_train <- predict(bst, dat$x_train)
+  pred_valid <- if(valid) {predict(bst, dat$x_valid)} else {NULL}
   residuals_test <- dat$y_test - pred_test
   residuals_train <- dat$y_train - pred_train
+  residuals_valid <- if(valid) {dat$y_valid - pred_valid} else {NULL} 
   if (plots) {plot(pred_test, dat$y_test)}
   if (binary) {
-    pred_test <- as.numeric(pred_test > 0.5)
-    acc <- sum(pred_test == dat$y_test)/length(dat$y_test)
+    pred <- as.numeric(pred_test > 0.5)
+    acc <- sum(pred == dat$y_test)/length(dat$y_test)
     mse <- "not applicable (binary response)"
   } else {
     mse <- mean((pred_test - dat$y_test)^2) 
@@ -145,15 +386,15 @@ basic_xgb_test <- function(bst, dat, plots = F) {
   }
   test_mse <- mse
   test_acc <- acc
-  return(list(pred_test = pred_test,
-              test_mse = test_mse,
+  return(list(test_mse = test_mse,
               test_acc = test_acc,
+              pred_test = pred_test,
               pred_train = pred_train,
+              pred_valid = pred_valid,
               residuals_test = residuals_test,
-              residuals_train = residuals_train))
+              residuals_train = residuals_train,
+              residuals_valid = residuals_valid))
 }
-
-
 
 
 ## Utility of each feature alone, then utility of all features together
