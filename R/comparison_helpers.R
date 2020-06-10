@@ -96,8 +96,9 @@ split_dat_gender_3way <- function(dat) {
               x_valid = as.matrix(x_valid)))
 }
 
-# Calculates number of males n1m in the training set, where it is
-# assumed that we do not want to discard anybody.
+# Calculates number of males n1m in the training set, 
+# and number of females n1f in the training set, 
+# where it is assumed that we do not want to discard anybody.
 # n := number of people overall
 # nm := number of males overall
 # p1f := proportion of females to males in the training set
@@ -117,6 +118,25 @@ calc_n1m_n1f <- function(n, nm, p1f, p2f) {
 #p1f <- 0.5
 #p2f <- 0.9
 #calc_n1m(n, nm, p1f, p2f)
+
+# If we want to increase size of training set we need to drop females.
+# Calculate number of discarded females df as a function of
+# number of people in the training set, n1
+# where the total number of people n and males nm are fixed:
+# n1 is number of people in the training set.
+# n is total number of people
+# nm is total number of males
+# p1f is the proportion of females in the training set
+# p2f is the proportion of females in the test set
+# df is the number of discarded females
+n1_calc_df <- function(n1, p1f, p2f, n, nm) {
+  K1 <- p1f/(1-p1f)
+  K2 <- p2f/(1-p2f)
+  df <- n - n1*(K1-K2)/(K1+1) - nm*(K2+1)
+  return(df*(df > 0))
+}
+n1 <- 10000:14000; n <- 10000
+plot(n1, n1_calc_df(n1, 0.5, 0.9, n, 5765), type = 'l')
 
 
 compare_label_shapleys <- function(sdat, features, 
