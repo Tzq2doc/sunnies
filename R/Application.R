@@ -191,15 +191,4 @@ legend(x = "top", legend = c("males","females"),
 
 
 
-# # If we want to increase size of training set we need to drop females.
-# # Calculate number of discarded females df as a function of
-# # number of people in the training set, n1
-# # where the total number of people n and males nm are fixed:
-# n1_calc_df <- function(n1, p1f, p2f, n, nm) {
-#   K1 <- p1f/(1-p1f)
-#   K2 <- p2f/(1-p2f)
-#   df <- n - n1*(K1-K2)/(K1+1) - nm*(K2+1)
-#   return(df*(df > 0))
-# }
-# n1 <- 10000:14000
-# plot(n1, calc_df(n1, 0.5, 0.9, n, 5765), type = 'l')
+
