@@ -10,13 +10,17 @@ library(naniar)
 library(ggplot2)
 
 
-dat1 <- dat_unif_squared()
+targets <- list(c(1,2,3),c(4,5,6),c(7,8,9))
 dat <- dat_a_few_important(n = 1e3, d1 = 4, d0 = 10)
+barplot(shapley2(dat[,c(1,2,3,4,6,7)], utility = DC))
 barplot(shapley(dat[,c(1,2,3,4,6,7)], utility = DC))
-barplot(shapley(dat1, utility = DC))
+
+barplot(shapley2(dat, utility = DC,
+                 targets = targets))
 
 
 # Our final goal will be to identify the k most important features
+dat1 <- dat_unif_squared()
 X <- dat1[,-1] #dat
 y <- dat1[,1]
 barplot(shapley2(y,X, utility = DC, targets = NULL))
@@ -25,52 +29,52 @@ barplot(shapley(y,X, utility = DC))
 targets <- list(c(1,2,3),c(4,5,6),c(7,8,9))
 
 
-utility <- DC
-
-
-if (missing(targets)) {targets <- as.list(1:ncol(X))}
-values <- list()
-players <- 1:length(targets)
-num_players <- length(players)
-team_sizes <- 0:num_players
-
-for ( s in team_sizes ) {
-  teams_of_size_s <- combn( players, s, simplify = F )
-  for ( team in teams_of_size_s ) {
-    team <- combine(targets[team])
-    Xs <- X[,team,drop = F]
-    values[[access_string(team)]] <- utility(Xs, y = y) 
-  }
-}
-
-CF <- function(t){values[[access_string(t)]]}
-attr(CF, "players") <- players
-attr(CF, "targets") <- targets
-
-v <- 1
-players <- environment(CF)$players[-v]
-targets <- environment(CF)$targets
-num_players <- length(players)
-team_sizes <- 0:num_players
-value <- 0
-for ( s in team_sizes ) {
-  value_s <- 0
-  teams_of_size_s <- if (length(players) != 1) {
-    combn(players, s, simplify = F)} else 
-    {list(players)}
-  for ( team in teams_of_size_s ) {
-    Sv <- combine(targets[c(v,team)])
-    S <- combine(targets[team])
-    value_in_team <- CF(Sv) - CF(S)
-    value_s <- value_s + value_in_team
-  }
-  average_value_s <- value_s/length(teams_of_size_s)
-  value <- value + average_value_s
-}
-average_value <- value/length(team_sizes)
-average_value 
-
-# We'll first need to rewrite the shapley function to handle sets of features
+# utility <- DC
+# 
+# 
+# if (missing(targets)) {targets <- as.list(1:ncol(X))}
+# values <- list()
+# players <- 1:length(targets)
+# num_players <- length(players)
+# team_sizes <- 0:num_players
+# 
+# for ( s in team_sizes ) {
+#   teams_of_size_s <- combn( players, s, simplify = F )
+#   for ( team in teams_of_size_s ) {
+#     team <- combine(targets[team])
+#     Xs <- X[,team,drop = F]
+#     values[[access_string(team)]] <- utility(Xs, y = y) 
+#   }
+# }
+# 
+# CF <- function(t){values[[access_string(t)]]}
+# attr(CF, "players") <- players
+# attr(CF, "targets") <- targets
+# 
+# v <- 1
+# players <- environment(CF)$players[-v]
+# targets <- environment(CF)$targets
+# num_players <- length(players)
+# team_sizes <- 0:num_players
+# value <- 0
+# for ( s in team_sizes ) {
+#   value_s <- 0
+#   teams_of_size_s <- if (length(players) != 1) {
+#     combn(players, s, simplify = F)} else 
+#     {list(players)}
+#   for ( team in teams_of_size_s ) {
+#     Sv <- combine(targets[c(v,team)])
+#     S <- combine(targets[team])
+#     value_in_team <- CF(Sv) - CF(S)
+#     value_s <- value_s + value_in_team
+#   }
+#   average_value_s <- value_s/length(teams_of_size_s)
+#   value <- value + average_value_s
+# }
+# average_value <- value/length(team_sizes)
+# average_value 
+# 
+# # We'll first need to rewrite the shapley function to handle sets of features
 
 
 
@@ -81,8 +85,8 @@ average_value
 estimate_CF2 <- function(X, utility, drop_method = "actual", 
                          targets = NULL, ...) {
   values <- list()
-  players <- 1:ncol(X)
   if (is.null(targets)) {targets <- as.list(1:ncol(X))}
+  players <- 1:length(targets)
   num_players <- length(players)
   team_sizes <- 0:num_players
   
@@ -120,7 +124,6 @@ estimate_CF2 <- function(X, utility, drop_method = "actual",
 
 shapley2 <- function(y, X, utility, v, CF, drop_method = "actual", 
                      targets = NULL, ...) {
-  
   if ( !is.matrix(y) ) {y <- as.matrix(y)}
   if (any(!is.finite(y))) {stop(
     paste0("shapley can only handle finite numbers at this time, ",
@@ -139,7 +142,10 @@ shapley2 <- function(y, X, utility, v, CF, drop_method = "actual",
   if ( any(!is.finite(X)) ) {stop(
     paste0("shapley can only handle finite numbers at this time, ",
            "please check X for NA, NaN or Inf"))}
-  if (missing(v)) {v <- 1:ncol(X)}
+  if (missing(v)) { if (is.null(targets)) {v <- 1:ncol(X)} else {
+    v <- 1:length(targets)  
+  }}
+  
   CF <- estimate_CF2(X, utility, drop_method = drop_method, 
                     targets = targets, y = y,...)
   sv <- shapley_vec2(CF, v)
