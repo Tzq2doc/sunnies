@@ -10,24 +10,98 @@ library(naniar)
 library(ggplot2)
 
 
-targets <- list(c(1,2,3),c(4,5,6),c(7,8,9))
-dat <- dat_a_few_important(n = 1e3, d1 = 4, d0 = 10)
-barplot(shapley2(dat[,c(1,2,3,4,6,7)], utility = DC))
-barplot(shapley(dat[,c(1,2,3,4,6,7)], utility = DC))
+dat <- dat_a_few_important(n = 1e3, d1 = 4, d0 = 30)
+out <- binary_tree_shap(dat)
+barplot(out$s)
+attr(dat, "important")
 
-barplot(shapley2(dat, utility = DC,
-                 targets = targets))
 
+# # Quick test / checking
+# targets <- list(c(1,2,3),c(4,5,6),c(7,8,9))
+# dat <- dat_a_few_important(n = 1e3, d1 = 4, d0 = 30)
+# barplot(shapley2(dat[,c(1,2,3,4,6,7)], utility = DC))
+# barplot(shapley(dat[,c(1,2,3,4,6,7)], utility = DC))
+# barplot(shapley2(dat, utility = DC,
+#                  targets = targets))
+# dat1 <- dat_unif_squared()
+# X <- dat1[,-1] #dat
+# y <- dat1[,1]
+# barplot(shapley2(y,X, utility = DC, targets = NULL))
+# barplot(shapley(y,X, utility = DC))
 
 # Our final goal will be to identify the k most important features
-dat1 <- dat_unif_squared()
-X <- dat1[,-1] #dat
-y <- dat1[,1]
-barplot(shapley2(y,X, utility = DC, targets = NULL))
-barplot(shapley(y,X, utility = DC))
 
-targets <- list(c(1,2,3),c(4,5,6),c(7,8,9))
+# My first tree chooser is just simple. It does a kind of binary search.
+# It just keeps the branch with the highest dependence. Later, I only
+# want to drop when the difference is high.
+binary_tree_step <- function(indices) {
+  ni <- length(indices)
+  if (ni %% 2 == 0) {
+    return(list(indices[1:(ni/2)], indices[(ni/2+1):ni]))  
+  } else {
+    s <- (ni-1)/2
+    return(list(c(indices[1:s],ni), indices[(s+1):ni]))
+  }
+}
 
+binary_tree_shap <- function(dat, k = 4) {
+  d <- ncol(dat)-1; i <- 0
+  targets <- binary_tree_step(1:d)
+  bshaps <- matrix(0, nrow = 2*log2(d), ncol = 2)
+  directions <- vector(mode = "integer", length = 2*log2(d))
+  target_sizes <- vector(mode = "integer", length = 2*log2(d)) 
+  while (length(targets[[1]]) > k) {
+    i <- i + 1
+    target_sizes[i] <- length(targets[[1]])
+    bshaps[i,] <- shapley2(dat, utility = DC, targets = targets)
+    directions[i] <- 1 + (bshaps[i,2] > bshaps[i,1])
+    targets <- binary_tree_step(targets[[directions[i]]])
+    target_sizes[i] <- length(targets[[1]])
+  }
+  bshaps <- bshaps[1:i,]
+  directions <- directions[1:i]
+  target_sizes <- target_sizes[1:i]
+  #bshaps; directions; target_sizes
+  final_targets <- as.list(unlist(targets))
+  s <- shapley2(dat, utility = DC, targets = final_targets)
+  names(s) <- unlist(final_targets)
+  return(list(s=s, bshaps = bshaps, directions = directions,
+              target_sizes = target_sizes))
+}
+
+
+
+
+# Investigating dropping odds ---------------------------------------------
+
+binary_tree_counter <- function(d) {
+  i <- 1
+  rvec <- vector(mode = "numeric", length = ceiling(2*log2(d)))
+  dvec <- vector(mode = "numeric", length = ceiling(2*log2(d)))
+  while (d > 3) {
+    if (d %% 2 == 0) { 
+      dvec[i] <- d/2 
+    } else { 
+      dvec[i] <- (d-1)/2
+      rvec[i] <- d
+    }
+    d <- dvec[i]
+    i <- i + 1
+  }
+  list(nr = sum(rvec != 0), ns = sum(dvec != 0))
+}
+
+# Cool fractal thing for the drop bits
+Nd <- 10000
+rem <- vector(mode = "numeric", length = Nd)
+spl <- vector(mode = "numeric", length = Nd)
+for (d in 1:Nd) {
+  out <- binary_tree_counter(d)
+  rem[d] <- out$nr
+  spl[d] <- out$ns
+}
+plot(1:Nd,rem, type = 'l')
+plot(1:Nd,spl, type = 'l')
 
 # utility <- DC
 # 
