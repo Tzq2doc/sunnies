@@ -12,6 +12,22 @@
 
 
 ###############################
+dat_a_few_important <- function(n = 1e3, d1 = 4, d0 = 10,
+                                A1 = 1:d1, A0 = rep(0.01,d0)) {
+  X1 <- matrix(rnorm(n*d1), nrow = n, ncol = d1)
+  X0 <- matrix(rnorm(n*d0), nrow = n, ncol = d0)
+  X <- matrix(0, nrow = n, ncol = d1+d0)
+  important <- sample(1:ncol(X), ncol(X1))
+  X[,important] <- X1
+  X[,-important] <- X0
+  y <- X1 %*% A1 + X0 %*% A0
+  dat <- cbind(y,X)
+  attr(dat, "important") <- important
+  return(dat)
+}
+
+
+###############################
 dat_linear_interaction <- function(n = 1e3, d = 4) {
   X <- matrix(rnorm(n*d), nrow = n, ncol = d)
   y <- rowSums(X) + X[,d-1]*X[,d]

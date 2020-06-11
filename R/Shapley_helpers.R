@@ -7,15 +7,11 @@
 #    If missing then assumed all.
 # CF: Characteristic function. Estimated (using utility) if missing.
 shapley <- function(y, X, utility, v, CF, drop_method = "actual", ...) {
-  if ( !is.matrix(X) ) {X <- as.matrix(X)}
-  if (any(!is.finite(X))) {stop(
-    paste0("shapley can only handle finite numbers at this time, ",
-           "please check X for NA, NaN or Inf"))}
+
   if ( !is.matrix(y) ) {y <- as.matrix(y)}
   if (any(!is.finite(y))) {stop(
     paste0("shapley can only handle finite numbers at this time, ",
            "please check y for NA, NaN or Inf"))}
-  
   if (!missing(CF)) {
     if (missing(v)) {
       v <- attr(CF,"players")
@@ -26,8 +22,13 @@ shapley <- function(y, X, utility, v, CF, drop_method = "actual", ...) {
     X <- y[,-1, drop = F]
     y <- y[, 1, drop = F]
   }
-  CF <- estimate_CF(X, utility, drop_method = drop_method, y = y, ...)
+  if ( !is.matrix(X) ) {X <- as.matrix(X)}
+  if ( any(!is.finite(X)) ) {stop(
+    paste0("shapley can only handle finite numbers at this time, ",
+           "please check X for NA, NaN or Inf"))}
   if (missing(v)) {v <- 1:ncol(X)}
+  
+  CF <- estimate_CF(X, utility, drop_method = drop_method, y = y, ...)
   sv <- shapley_vec(CF, v)
   names(sv) <- colnames(X)
   return(sv)

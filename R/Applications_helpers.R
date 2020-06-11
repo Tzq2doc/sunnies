@@ -67,3 +67,6 @@ visualise_missing <- function(Xh) {
   plots$p7 <- gg_miss_upset(Xh, nsets = 16)  
   return(plots)
 }
+
+
+
