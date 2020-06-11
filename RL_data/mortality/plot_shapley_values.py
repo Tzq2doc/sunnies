@@ -26,21 +26,22 @@ cf = "dcor" #"aidc" #"r2" #"dcor"
 kind = ["expl", "pred", "res"]
 
 _, ax = plt.subplots()
-root = "retrained_full_model.dat.pickle"
-with open("shapley_features_{0}".format(root), 'rb') as _f:
+#modelname = "linreg_model.dat"
+modelname= "retrained_full_model.dat"
+with open(f"results/shapley_features_{modelname}.pickle", 'rb') as _f:
         labels = pickle.load(_f)
 d = len(labels)
 x_range = list(range(d))
 
 for _n, _kind in enumerate(kind):
-    _filename = "shapley_{0}_{1}_{2}".format(_kind, cf, root)
+    _filename = f"results/shapley_{_kind}_{cf}_{modelname}.pickle"
     with open(_filename, 'rb') as _f:
         _shapley_values = pickle.load(_f)
 
     plt.bar(x_range + 0.1*_n*np.ones(d), _shapley_values, alpha=0.5,
             label=_kind, width=0.1)
 
-    plt.title("Shapley decomp of {0}".format(cf))
+    plt.title(f"Shapley decomp of {cf} on {modelname}")
     plt.legend()
     ax.set_xticks(x_range)
     ax.set_xticklabels(labels, rotation=30)
