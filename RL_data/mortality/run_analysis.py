@@ -18,7 +18,7 @@ import sys
 
 
 
-modelname = "retrained_full_model.dat"
+modelname = "full_model.dat"
 #modelname = "test.dat"
 
 load_data =True
