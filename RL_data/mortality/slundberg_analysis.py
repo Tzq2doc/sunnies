@@ -67,7 +67,36 @@ drop = ["creatinine", "BUN", "potassium", "sodium", "total_bilirubin",
 
 # =============================================================================
 # ---
-if not load_data:
+if load_data:
+    train_file = "train_data_slundberg.csv"
+    test_file = "test_data_slundberg.csv"
+
+    train = pd.read_csv(train_file)
+    test = pd.read_csv(test_file)
+
+    #--- Data for Shapley calc
+    shapley_data = pd.concat([train, test])
+    shapley_data = shapley_data[features_with_target]
+    shapley_data = shapley_data.dropna()
+    X_shapley = shapley_data.drop(["target"], axis=1)
+    X_shapley["sex_isFemale"] = [1 if _x else 0 for _x in X_shapley["sex_isFemale"]]
+    LABELS = X_shapley.columns
+    convert_dict = {"sex_isFemale": float,
+            "age" : float
+            }
+    X_shapley = X_shapley.astype(convert_dict)
+    X_shapley = np.array(X_shapley)
+    y_shapley = np.array(shapley_data["target"].astype('float'))
+    # ---
+
+    X_train = train.drop(["target"], axis=1)
+    X_test = test.drop(["target"], axis=1)
+    y_train = train["target"].astype('int')
+    y_test = test["target"].astype('int')
+
+    X_train, X_valid, y_train, y_valid = train_test_split(X_train, y_train, random_state=0, test_size=0.1)
+
+else:
     import loadnhanes
     X,y = loadnhanes._load()
 
@@ -117,42 +146,13 @@ if not load_data:
     shapley_data = data[features_with_target]
     X_shapley = shapley_data.drop(["target"], axis=1)
     X_shapley["sex_isFemale"] = [1 if _x else 0 for _x in X_shapley["sex_isFemale"]]
-    labels = X_shapley.columns
+    LABELS = X_shapley.columns
     X_shapley = np.array(X_shapley[shapley_features])
     y_shapley = np.array(shapley_data["target"].astype('int'))
     # ---
 
 # ---
 # =============================================================================
-
-if load_data:
-    train_file = "train_data_slundberg.csv"
-    test_file = "test_data_slundberg.csv"
-
-    train = pd.read_csv(train_file)
-    test = pd.read_csv(test_file)
-
-    #--- Data for Shapley calc
-    shapley_data = pd.concat([train, test])
-    shapley_data = shapley_data[features_with_target]
-    shapley_data = shapley_data.dropna()
-    X_shapley = shapley_data.drop(["target"], axis=1)
-    X_shapley["sex_isFemale"] = [1 if _x else 0 for _x in X_shapley["sex_isFemale"]]
-    labels = X_shapley.columns
-    convert_dict = {"sex_isFemale": float,
-            "age" : float
-            }
-    X_shapley = X_shapley.astype(convert_dict)
-    X_shapley = np.array(X_shapley)
-    y_shapley = np.array(shapley_data["target"].astype('float'))
-    # ---
-
-    X_train = train.drop(["target"], axis=1)
-    X_test = test.drop(["target"], axis=1)
-    y_train = train["target"].astype('int')
-    y_test = test["target"].astype('int')
-
-    X_train, X_valid, y_train, y_valid = train_test_split(X_train, y_train, random_state=0, test_size=0.1)
 
 def bce(truth, preds):
     return np.mean(-truth*np.log(preds)-(1-truth)*np.log(1-preds))
@@ -216,7 +216,7 @@ else:
     print("Saved model to file {0}".format(MODELNAME))
 
 if Shap:
-mapped_feature_names = list(map(lambda x: name_map.get(x, x), X_train.columns))
+    mapped_feature_names = list(map(lambda x: name_map.get(x, x), X_train.columns))
     # === SUMMARY PLOTS
     explainer = shap.TreeExplainer(xgb_model)
     xgb_shap = explainer.shap_values(X)
@@ -262,7 +262,7 @@ if Pred:
     plt.show()
     #print(c_statistic_harrell(PREDS, y_test))
 
-def do_shapley(modelname, preds):
+def do_shapley(modelname, preds, labels):
     _sfilename = "results/shapley_features_{0}.pickle".format(modelname)
     if not os.path.isfile(_sfilename):
         with open(_sfilename, 'wb') as _f:
@@ -370,11 +370,11 @@ def do_shapley(modelname, preds):
 
 # === Shapley:
 if Shapley:
-    do_shapley(MODELNAME)
+    do_shapley(MODELNAME, PREDS, LABELS)
 plt.show()
 
 if Linreg:
     MODELNAME = "linreg_slundberg.dat"
     model = LinearRegression().fit(X_train, y_train)
     PREDS = model.predict(X_test)
-    do_shapley(MODELNAME, PREDS)
+    do_shapley(MODELNAME, PREDS, LABELS)
