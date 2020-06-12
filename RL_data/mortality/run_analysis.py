@@ -18,8 +18,8 @@ import sys
 
 
 
-#modelname = "full_model.dat"
-modelname = "small_xgb.dat"
+modelname = "full_model.dat"
+#modelname = "small_xgb.dat"
 
 load_data =True
 Shapley = True
@@ -93,7 +93,6 @@ if not load_data:
 
     #--- Data for Shapley calc
     shapley_data = data[features_with_target]
-    #shapley_data = shapley_data.dropna()
     X_shapley = shapley_data.drop(["target"], axis=1)
     X_shapley["sex_isFemale"] = [1 if _x else 0 for _x in X_shapley["sex_isFemale"]]
     labels = X_shapley.columns
@@ -230,20 +229,20 @@ else:
         "colsample_bytree": 1
     }
 
-    xgb_model = xgboost.XGBRegressor()
-   # xgb_model = xgboost.XGBRegressor(
-   #     max_depth=params["max_depth"],
-   #     n_estimators=params["n_estimators"],
-   #     learning_rate=params["learning_rate"],#math.pow(10, params["learning_rate"]),
-   #     subsample=params["subsample"],
-   #     reg_lambda=params["reg_lambda"],
-   #     colsample_bytree=params["colsample_bytree"],
-   #     reg_alpha=params["reg_alpha"],
-   #     n_jobs=16,
-   #     random_state=1,
-   #     objective="survival:cox",
-   #     base_score=1
-   # )
+    #xgb_model = xgboost.XGBRegressor()
+    xgb_model = xgboost.XGBRegressor(
+        max_depth=params["max_depth"],
+        n_estimators=params["n_estimators"],
+        learning_rate=params["learning_rate"],#math.pow(10, params["learning_rate"]),
+        subsample=params["subsample"],
+        reg_lambda=params["reg_lambda"],
+        colsample_bytree=params["colsample_bytree"],
+        reg_alpha=params["reg_alpha"],
+        n_jobs=16,
+        random_state=1,
+        objective="survival:cox",
+        base_score=1
+    )
 
     xgb_model.fit(X_train, y_train,
             verbose=500,
