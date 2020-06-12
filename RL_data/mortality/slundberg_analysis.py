@@ -24,7 +24,7 @@ import shapley
 load_data, Shapley, Shap, Pred, Linreg = [0, 0, 0, 0, 0]
 
 #load_data = True
-Shapley = True
+#Shapley = True
 #Shap = True
 Pred = True
 #Linreg = True
@@ -273,7 +273,9 @@ if Pred:
     plt.colorbar()
     plt.xlabel("y_test")
     plt.show()
-    #print(c_statistic_harrell(PREDS, y_test))
+    print(PREDS)
+    print(np.array(y_test))
+    print(f"c-statistic: {c_statistic_harrell(PREDS, np.array(y_test))}")
 
 def do_shapley(modelname, preds, labels):
     _sfilename = f"results/shapley_features_{modelname}.pickle"
