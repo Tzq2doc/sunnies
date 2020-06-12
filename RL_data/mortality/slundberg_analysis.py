@@ -24,13 +24,13 @@ import shapley
 load_data, Shapley, Shap, Pred, Linreg = [0, 0, 0, 0, 0]
 
 load_data = True
-#Shapley = True
+Shapley = True
 #Shap = True
 #Pred = True
-Linreg = True
+#Linreg = True
 
-#MODELNAME = "slundberg_model.dat"
-MODELNAME = "slundberg_small_xgb.dat"
+MODELNAME = "slundberg_model.dat"
+#MODELNAME = "slundberg_small_xgb.dat"
 
 
 shapley_features = [
