@@ -24,12 +24,12 @@ import shapley
 load_data, Shapley, Shap, Pred, Linreg = [0, 0, 0, 0, 0]
 
 load_data = True
-Shapley = True
+#Shapley = True
 #Shap = True
-#Pred = True
+Pred = True
 #Linreg = True
 
-MODELNAME = "slundberg_model.dat"
+MODELNAME = "slundberg_model_withnans.dat"
 #MODELNAME = "slundberg_small_xgb.dat"
 
 
@@ -128,8 +128,11 @@ else:
 
     # ---
     # Drop NaNs from data which goes into analysis: (unlike Slundberg)
-    X = data.drop(["target"], axis=1)
-    y = data["target"]
+    #X = data.drop(["target"], axis=1)
+    print(data.drop(["target"], axis=1).shape)
+    print(X.shape)
+    #y = data["target"]
+    # ---
     X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0, test_size=0.3)
 
     test = X_test.copy()
@@ -258,9 +261,15 @@ if Pred:
 
     bces = [bce(_y, _p) for _y, _p in zip(y_test, PREDS)]
     plt.scatter(y_test, (np.log(PREDS)), c=bces, cmap='viridis')
+    plt.ylabel("log preds")
+    print(len(PREDS))
+    print(len(y_test))
+    print(len(set(y_test)))
+    #plt.scatter(y_test, PREDS, c=bces, cmap='viridis')
+    #plt.ylabel("preds")
+
     plt.colorbar()
     plt.xlabel("y_test")
-    plt.ylabel("log preds")
     plt.show()
     #print(c_statistic_harrell(PREDS, y_test))
 
