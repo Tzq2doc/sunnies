@@ -29,7 +29,8 @@ Shapley = True
 #Pred = True
 #Linreg = True
 
-MODELNAME = "slundberg_model.dat"
+#MODELNAME = "slundberg_model.dat"
+MODELNAME = "slundberg_small_xgb.dat"
 
 
 shapley_features = [
@@ -174,6 +175,7 @@ if os.path.isfile(MODELNAME):
     xgb_model = xgboost.Booster()
     xgb_model.load_model(MODELNAME)
     print("Loaded model from file. Not training!")
+    PREDS = xgb_model.predict(xgboost.DMatrix(X_test))
 
 else:
     X_train, X_valid, y_train, y_valid= train_test_split(X_train, y_train, test_size=0.2, random_state=123)
@@ -188,20 +190,20 @@ else:
         "colsample_bytree": 1
     }
 
-    #xgb_model = xgboost.XGBRegressor()
-    xgb_model = xgboost.XGBRegressor(
-        max_depth=params["max_depth"],
-        n_estimators=params["n_estimators"],
-        learning_rate=params["learning_rate"],#math.pow(10, params["learning_rate"]),
-        subsample=params["subsample"],
-        reg_lambda=params["reg_lambda"],
-        colsample_bytree=params["colsample_bytree"],
-        reg_alpha=params["reg_alpha"],
-        n_jobs=16,
-        random_state=1,
-        objective="survival:cox",
-        base_score=1
-    )
+    xgb_model = xgboost.XGBRegressor()
+    #xgb_model = xgboost.XGBRegressor(
+    #    max_depth=params["max_depth"],
+    #    n_estimators=params["n_estimators"],
+    #    learning_rate=params["learning_rate"],#math.pow(10, params["learning_rate"]),
+    #    subsample=params["subsample"],
+    #    reg_lambda=params["reg_lambda"],
+    #    colsample_bytree=params["colsample_bytree"],
+    #    reg_alpha=params["reg_alpha"],
+    #    n_jobs=16,
+    #    random_state=1,
+    #    objective="survival:cox",
+    #    base_score=1
+    #)
 
     xgb_model.fit(X_train, y_train,
             verbose=500,
@@ -214,7 +216,7 @@ else:
     xgb_model.save_model(MODELNAME)
     print("Saved model to file {0}".format(MODELNAME))
 
-PREDS = xgb_model.predict(xgboost.DMatrix(X_test))
+    PREDS = xgb_model.predict(X_test)
 
 if Shap:
     mapped_feature_names = list(map(lambda x: name_map.get(x, x), X_train.columns))
