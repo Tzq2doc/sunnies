@@ -28,7 +28,7 @@ kind = ["expl", "pred", "res"]
 _, ax = plt.subplots()
 #modelname = "linreg_model.dat"
 #modelname= "full_model.dat"
-modelname = "small_xgb.dat"
+#modelname = "small_xgb.dat"
 with open(f"results/shapley_features_{modelname}.pickle", 'rb') as _f:
         labels = pickle.load(_f)
 d = len(labels)

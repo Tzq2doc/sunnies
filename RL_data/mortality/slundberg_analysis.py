@@ -15,6 +15,12 @@ import pandas as pd
 import lifelines
 import scipy
 import sys
+from sklearn.linear_model import LinearRegression
+
+sys.path.insert(0, "../../../sunnies/Python")
+from xgb_regressor import display_shapley
+import shapley
+
 
 
 
@@ -22,8 +28,9 @@ load_data = False
 Shapley = False
 Shap = False
 Pred = True
+Linreg = True
 
-modelname = "slundberg_model.dat"
+MODELNAME = "slundberg_model.dat"
 
 
 shapley_features = [
@@ -52,12 +59,16 @@ name_map = {
     "urine_albumin_isNegative": "Albumin present in urine",
     "serum_protein": "Blood protein"
 }
+drop = ["creatinine", "BUN", "potassium", "sodium", "total_bilirubin",
+        "segmented_neutrophils", "lymphocytes", "monocytes", "eosinophils",
+        "basophils", "band_neutrophils", "calcium", "SGOT",
+        "alkaline_phosphatase", "uric_acid", "sedimentation_rate",
+        "red_blood_cells", "serum_protein"]
+
 # =============================================================================
 # ---
 if not load_data:
     import loadnhanes
-
-
     X,y = loadnhanes._load()
 
     # clean up a bit
@@ -82,7 +93,7 @@ if not load_data:
     y = y[rows]
 
     data = X.copy()
-    #data = X.drop(drop, axis=1)
+    data = X.drop(drop, axis=1)
     data["target"] = y
     data = data.dropna()
 
@@ -184,7 +195,7 @@ if load_data:
 X = X_train.copy()
 mapped_feature_names = list(map(lambda x: name_map.get(x, x), X.columns))
 
-def bce(truth,preds):
+def bce(truth, preds):
     return np.mean(-truth*np.log(preds)-(1-truth)*np.log(1-preds))
 
 def c_statistic_harrell(pred, labels):
@@ -201,9 +212,9 @@ def c_statistic_harrell(pred, labels):
 
 # === XGBOOST:
 # --- Try to load model from file
-if os.path.isfile(modelname):
+if os.path.isfile(MODELNAME):
     xgb_model = xgboost.Booster()
-    xgb_model.load_model(modelname)
+    xgb_model.load_model(MODELNAME)
     print("Loaded model from file. Not training!")
 
 else:
@@ -242,8 +253,8 @@ else:
     )
 
     # --- Save model to file
-    xgb_model.save_model(modelname)
-    print("Saved model to file {0}".format(modelname))
+    xgb_model.save_model(MODELNAME)
+    print("Saved model to file {0}".format(MODELNAME))
 
 if Shap:
     # === SUMMARY PLOTS
@@ -277,26 +288,21 @@ if Shap:
 
 if Pred:
     # --- Try to load model from file
-    if os.path.isfile(modelname):
+    if os.path.isfile(MODELNAME):
         xgb_model = xgboost.Booster()
-        xgb_model.load_model(modelname)
+        xgb_model.load_model(MODELNAME)
         print("Loaded model from file. Not training!")
 
-    preds = xgb_model.predict(xgboost.DMatrix(X_test))
-    bces = [bce(_y, _p) for _y, _p in zip(y_test, preds)]
-    plt.scatter(y_test, (np.log(preds)), c=bces, cmap='viridis')
+    PREDS = xgb_model.predict(xgboost.DMatrix(X_test))
+    bces = [bce(_y, _p) for _y, _p in zip(y_test, PREDS)]
+    plt.scatter(y_test, (np.log(PREDS)), c=bces, cmap='viridis')
     plt.colorbar()
     plt.xlabel("y_test")
     plt.ylabel("log preds")
     plt.show()
-    #print(c_statistic_harrell(preds, y_test))
+    #print(c_statistic_harrell(PREDS, y_test))
 
-# === Shapley:
-if Shapley:
-    sys.path.insert(0, "../../../sunnies/Python")
-    from xgb_regressor import display_shapley
-    import shapley
-
+def do_shapley(modelname, preds):
     _sfilename = "results/shapley_features_{0}.pickle".format(modelname)
     if not os.path.isfile(_sfilename):
         with open(_sfilename, 'wb') as _f:
@@ -402,19 +408,13 @@ if Shapley:
 
     plt.draw()
 
+# === Shapley:
+if Shapley:
+    do_shapley(MODELNAME)
 plt.show()
-## === OLD:
-#if Shapley:
-#    sys.path.insert(0, "../../../sunnies/Python")
-#
-#    import shapley
-#    x_range = list(range(X_shapley.shape[1]))
-#    print(shapley.calc_shapley_values(X_shapley, y_shapley, x_range, "r2"))
-#
-#    from xgb_regressor import display_shapley
-#    display_shapley(X_shapley, y_shapley, cf=["dcor", "r2"], xlabels=labels)
-#    #display_shapley(X_shapley, y_shapley, cf=["dcor", "aidc", "r2", "hsic"], xlabels=labels)
-#    #display_shapley(X_shapley, y_shapley, cf=["r2"], xlabels=labels)
-#    plt.show()
-#
-#
+
+if Linreg:
+    MODELNAME = "linreg_slundberg.dat"
+    model = LinearRegression().fit(X_train, y_train)
+    PREDS = model.predict(X_test)
+    do_shapley(MODELNAME, PREDS)

@@ -62,8 +62,6 @@ drop = ["creatinine", "BUN", "potassium", "sodium", "total_bilirubin",
 # ---
 if not load_data:
     import loadnhanes
-
-
     X,y = loadnhanes._load()
 
     # clean up a bit
