@@ -20,7 +20,7 @@ import sys
 
 load_data = False
 Shapley = False
-XGBoost =True
+Shap = False
 Pred = True
 
 modelname = "slundberg_model.dat"
