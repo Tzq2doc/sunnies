@@ -26,6 +26,9 @@ cf = "dcor" #"aidc" #"r2" #"dcor"
 kind = ["expl", "pred", "res"]
 
 _, ax = plt.subplots()
+#modelname = "linreg_slundberg.dat"
+#modelname = "slundberg_model.dat"
+modelname = "slundberg_small_xgb.dat"
 #modelname = "linreg_model.dat"
 #modelname= "full_model.dat"
 #modelname = "small_xgb.dat"

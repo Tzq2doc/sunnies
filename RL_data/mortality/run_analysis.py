@@ -114,7 +114,6 @@ if not load_data:
     remainder_0 = data_0.drop(train_0.index)
     remainder_1 = data_1.drop(train_1.index)
 
-
     test_0 = remainder_0.sample(n=1142, random_state=1)
     test_1 = remainder_1.sample(n=1142, random_state=1)
     test = pd.concat([test_0, test_1])

@@ -88,7 +88,6 @@ if not load_data:
 
     #--- Data for Shapley calc
     shapley_data = data[features_with_target]
-    #shapley_data = shapley_data.dropna()
     X_shapley = shapley_data.drop(["target"], axis=1)
     X_shapley["sex_isFemale"] = [1 if _x else 0 for _x in X_shapley["sex_isFemale"]]
     labels = X_shapley.columns
@@ -103,16 +102,6 @@ if not load_data:
 
     data_0 = data[data['sex_isFemale'] == 0]
     data_1 = data[data['sex_isFemale'] == 1]
-    #pids_0 = np.unique(data_0.index.values)
-    #pids_1 = np.unique(data_1.index.values)
-
-
-    # ==============================================
-    # TODO:
-    # calculate the shapley values of the predictions, the residuals, and the labels,
-    # both on the training set and the test set.
-    # hopefully find that blood pressure contributes to the residuals more in females (on the deployed model), when the model is trained only on males
-    # ==============================================
 
     train_0 = data_0.sample(n=400, random_state=1)
     train_1 = data_1.sample(n=4000, random_state=1)
@@ -121,7 +110,6 @@ if not load_data:
 
     remainder_0 = data_0.drop(train_0.index)
     remainder_1 = data_1.drop(train_1.index)
-
 
     test_0 = remainder_0.sample(n=1142, random_state=1)
     test_1 = remainder_1.sample(n=1142, random_state=1)
@@ -134,14 +122,6 @@ if not load_data:
     print("Test data: {0}".format(test.shape))
     print("Class 0: {0}".format(test_0.shape))
     print("Class 1: {0}".format(test_1.shape))
-
-    # --- Sanity check
-    #List1 = test.index.values
-    #List2 = train.index.values
-    #print(any(item in List1 for item in List2))
-    #print(test.shape)
-    #print(train.shape)
-
 
     X_train = train.drop(["target"], axis=1)
     X_test = test.drop(["target"], axis=1)
@@ -157,17 +137,12 @@ if load_data:
     train = pd.read_csv(train_file)
     test = pd.read_csv(test_file)
 
-    print(train.shape)
     train = train.dropna()
-    print(train.shape)
     test = test.dropna()
-    #print(train.head())
-    #print(test.head())
 
     #--- Data for Shapley calc
     shapley_data = pd.concat([train, test])
     shapley_data = shapley_data[features_with_target]
-    #shapley_data = shapley_data.dropna()
     X_shapley = shapley_data.drop(["target"], axis=1)
     X_shapley["sex_isFemale"] = [1 if _x else 0 for _x in X_shapley["sex_isFemale"]]
     labels = X_shapley.columns
