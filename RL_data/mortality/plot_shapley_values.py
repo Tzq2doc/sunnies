@@ -28,8 +28,8 @@ kind = ["expl", "pred", "res"]
 _, ax = plt.subplots()
 #modelname = "linreg_slundberg.dat"
 #modelname = "slundberg_model.dat"
-modelname = "slundberg_small_xgb.dat"
-#modelname = "linreg_model.dat"
+#modelname = "slundberg_small_xgb.dat"
+modelname = "linreg_model.dat"
 #modelname= "full_model.dat"
 #modelname = "small_xgb.dat"
 with open(f"results/shapley_features_{modelname}.pickle", 'rb') as _f:

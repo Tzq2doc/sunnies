@@ -21,10 +21,12 @@ import sys
 modelname = "full_model.dat"
 #modelname = "small_xgb.dat"
 
-load_data =True
-Shapley = True
-Pred = False
-Shap = False
+load_data, Shapley, Shap, Pred = [0, 0, 0, 0]
+
+load_data = True
+#Shapley = True
+#Shap = True
+Pred = True
 
 shapley_features = [
     "sex_isFemale",
@@ -355,7 +357,7 @@ if Pred:
     bces = [bce(_y, _p) for _y, _p in zip(y_test, preds)]
     plt.scatter(y_test, (np.log(preds)), c=bces, cmap='viridis')
     plt.colorbar()
-    cbar.set_label(BCE)
+    #cbar.set_label(BCE)
     plt.xlabel("y_test")
     plt.ylabel("log preds")
     plt.show()
