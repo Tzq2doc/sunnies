@@ -23,13 +23,14 @@ import shapley
 
 load_data, Shapley, Shap, Pred, Linreg = [0, 0, 0, 0, 0]
 
-load_data = True
+#load_data = True
 #Shapley = True
 #Shap = True
 Pred = True
 #Linreg = True
 
 MODELNAME = "slundberg_model_withnans.dat"
+#MODELNAME = "slundberg_model.dat"
 #MODELNAME = "slundberg_small_xgb.dat"
 
 
@@ -129,11 +130,13 @@ else:
     # ---
     # Drop NaNs from data which goes into analysis: (unlike Slundberg)
     #X = data.drop(["target"], axis=1)
-    print(data.drop(["target"], axis=1).shape)
-    print(X.shape)
     #y = data["target"]
+    print(f"Unique logRR labels with NaNs: {len(set(y))}")
+    print(f"Unique logRR labels without NaNs: {len(set(data['target']))}")
     # ---
     X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0, test_size=0.3)
+    print(f"Unique logRR labels in training data: {len(set(y_train))}")
+    print(f"Unique logRR labels in test data: {len(set(y_test))}")
 
     test = X_test.copy()
     test["target"] = y_test
@@ -193,20 +196,20 @@ else:
         "colsample_bytree": 1
     }
 
-    xgb_model = xgboost.XGBRegressor()
-    #xgb_model = xgboost.XGBRegressor(
-    #    max_depth=params["max_depth"],
-    #    n_estimators=params["n_estimators"],
-    #    learning_rate=params["learning_rate"],#math.pow(10, params["learning_rate"]),
-    #    subsample=params["subsample"],
-    #    reg_lambda=params["reg_lambda"],
-    #    colsample_bytree=params["colsample_bytree"],
-    #    reg_alpha=params["reg_alpha"],
-    #    n_jobs=16,
-    #    random_state=1,
-    #    objective="survival:cox",
-    #    base_score=1
-    #)
+    #xgb_model = xgboost.XGBRegressor()
+    xgb_model = xgboost.XGBRegressor(
+        max_depth=params["max_depth"],
+        n_estimators=params["n_estimators"],
+        learning_rate=params["learning_rate"],#math.pow(10, params["learning_rate"]),
+        subsample=params["subsample"],
+        reg_lambda=params["reg_lambda"],
+        colsample_bytree=params["colsample_bytree"],
+        reg_alpha=params["reg_alpha"],
+        n_jobs=16,
+        random_state=1,
+        objective="survival:cox",
+        base_score=1
+    )
 
     xgb_model.fit(X_train, y_train,
             verbose=500,
@@ -264,9 +267,7 @@ if Pred:
     plt.ylabel("log preds")
     print(len(PREDS))
     print(len(y_test))
-    print(len(set(y_test)))
-    #plt.scatter(y_test, PREDS, c=bces, cmap='viridis')
-    #plt.ylabel("preds")
+    print(f"Unique labels predicted on: {len(set(y_test))}")
 
     plt.colorbar()
     plt.xlabel("y_test")
