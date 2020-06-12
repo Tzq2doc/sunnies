@@ -24,10 +24,10 @@ import shapley
 load_data, Shapley, Shap, Pred, Linreg = [0, 0, 0, 0, 0]
 
 load_data = True
-Shapley = True
+#Shapley = True
 #Shap = True
 #Pred = True
-#Linreg = True
+Linreg = True
 
 MODELNAME = "slundberg_model.dat"
 
@@ -263,11 +263,10 @@ if Pred:
     #print(c_statistic_harrell(PREDS, y_test))
 
 def do_shapley(modelname, preds, labels):
-    _sfilename = "results/shapley_features_{0}.pickle".format(modelname)
+    _sfilename = f"results/shapley_features_{modelname}.pickle"
     if not os.path.isfile(_sfilename):
         with open(_sfilename, 'wb') as _f:
             pickle.dump(labels, _f)
-
 
     # --- On data
     d = X_shapley.shape[1]
