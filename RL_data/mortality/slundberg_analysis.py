@@ -101,6 +101,16 @@ if not load_data:
     # Drop NaNs from data which goes into analysis: (unlike Slundberg)
     X = data.drop(["target"], axis=1)
     y = data["target"]
+    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0, test_size=0.3)
+
+    test = X_test.copy()
+    test["target"] = y_test
+    train= X_train.copy()
+    train["target"] = y_train
+    train.to_csv("train_data_slundberg.csv")
+    test.to_csv("test_data_slundberg.csv")
+
+    X_train, X_valid, y_train, y_valid = train_test_split(X_train, y_train, random_state=0, test_size=0.1)
     # ---
 
     #--- Data for Shapley calc
@@ -111,55 +121,6 @@ if not load_data:
     X_shapley = np.array(X_shapley[shapley_features])
     y_shapley = np.array(shapley_data["target"].astype('int'))
     # ---
-
-    mapped_feature_names = list(map(lambda x: name_map.get(x, x), X.columns))
-
-    # --- Split by patient id
-    pids = np.unique(X.index.values)
-    if X.shape[0] == len(pids):
-        print("Only unique patient ids")
-
-    train_pids, test_pids = train_test_split(pids, random_state=0, test_size=0.3)
-    train_pids, valid_pids = train_test_split(train_pids, random_state=0)
-
-    # find the indexes of the samples from the patient ids
-    train_inds = np.where([p in train_pids for p in X.index.values])[0]
-    valid_inds = np.where([p in valid_pids for p in X.index.values])[0]
-    test_inds = np.where([p in test_pids for p in X.index.values])[0]
-
-    # create the split datasets
-    X_train = X.iloc[train_inds,:]
-    X_valid = X.iloc[valid_inds,:]
-    X_test = X.iloc[test_inds,:]
-    y_train = y[train_inds]
-    y_valid = y[valid_inds]
-    y_test = y[test_inds]
-
-    ## mean impute for linear and deep models
-    #imp = Imputer()
-    #imp.fit(X_strain)
-    #X_strain_imp = imp.transform(X_strain)
-    #X_train_imp = imp.transform(X_train)
-    #X_valid_imp = imp.transform(X_valid)
-    #X_test_imp = imp.transform(X_test)
-    #X_imp = imp.transform(X)
-    #
-    ## standardize
-    #scaler = StandardScaler()
-    #scaler.fit(X_strain_imp)
-    #X_strain_imp = scaler.transform(X_strain_imp)
-    #X_train_imp = scaler.transform(X_train_imp)
-    #X_valid_imp = scaler.transform(X_valid_imp)
-    #X_test_imp = scaler.transform(X_test_imp)
-    #X_imp = scaler.transform(X_imp)
-
-    test = X_test.copy()
-    test["target"] = y_test
-    train= X_train.copy()
-    train["target"] = y_train
-
-    train.to_csv("train_data_slundberg.csv")
-    test.to_csv("test_data_slundberg.csv")
 
 # ---
 # =============================================================================
@@ -186,16 +147,12 @@ if load_data:
     y_shapley = np.array(shapley_data["target"].astype('float'))
     # ---
 
-
     X_train = train.drop(["target"], axis=1)
     X_test = test.drop(["target"], axis=1)
     y_train = train["target"].astype('int')
     y_test = test["target"].astype('int')
 
-    #X = pd.concat([X_train, X_test])
-
-X = X_train.copy()
-mapped_feature_names = list(map(lambda x: name_map.get(x, x), X.columns))
+    X_train, X_valid, y_train, y_valid = train_test_split(X_train, y_train, random_state=0, test_size=0.1)
 
 def bce(truth, preds):
     return np.mean(-truth*np.log(preds)-(1-truth)*np.log(1-preds))
@@ -259,6 +216,7 @@ else:
     print("Saved model to file {0}".format(MODELNAME))
 
 if Shap:
+mapped_feature_names = list(map(lambda x: name_map.get(x, x), X_train.columns))
     # === SUMMARY PLOTS
     explainer = shap.TreeExplainer(xgb_model)
     xgb_shap = explainer.shap_values(X)
