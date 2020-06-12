@@ -21,14 +21,13 @@ sys.path.insert(0, "../../../sunnies/Python")
 from xgb_regressor import display_shapley
 import shapley
 
+load_data, Shapley, Shap, Pred, Linreg = [0, 0, 0, 0, 0]
 
-
-
-load_data = False
-Shapley = False
-Shap = False
-Pred = True
-Linreg = True
+load_data = True
+Shapley = True
+#Shap = True
+#Pred = True
+#Linreg = True
 
 MODELNAME = "slundberg_model.dat"
 
@@ -215,6 +214,8 @@ else:
     xgb_model.save_model(MODELNAME)
     print("Saved model to file {0}".format(MODELNAME))
 
+PREDS = xgb_model.predict(xgboost.DMatrix(X_test))
+
 if Shap:
     mapped_feature_names = list(map(lambda x: name_map.get(x, x), X_train.columns))
     # === SUMMARY PLOTS
@@ -253,7 +254,6 @@ if Pred:
         xgb_model.load_model(MODELNAME)
         print("Loaded model from file. Not training!")
 
-    PREDS = xgb_model.predict(xgboost.DMatrix(X_test))
     bces = [bce(_y, _p) for _y, _p in zip(y_test, PREDS)]
     plt.scatter(y_test, (np.log(PREDS)), c=bces, cmap='viridis')
     plt.colorbar()
