@@ -24,13 +24,13 @@ import shapley
 load_data, Shapley, Shap, Pred, Linreg = [0, 0, 0, 0, 0]
 
 #load_data = True
-#Shapley = True
+Shapley = True
 #Shap = True
 Pred = True
 #Linreg = True
 
-MODELNAME = "slundberg_model_withnans.dat"
-#MODELNAME = "slundberg_model.dat"
+#MODELNAME = "slundberg_model_withnans.dat"
+MODELNAME = "slundberg_model.dat"
 #MODELNAME = "slundberg_small_xgb.dat"
 
 
@@ -129,10 +129,11 @@ else:
 
     # ---
     # Drop NaNs from data which goes into analysis: (unlike Slundberg)
-    #X = data.drop(["target"], axis=1)
-    #y = data["target"]
     print(f"Unique logRR labels with NaNs: {len(set(y))}")
-    print(f"Unique logRR labels without NaNs: {len(set(data['target']))}")
+    X = data.drop(["target"], axis=1)
+    y = data["target"]
+    print(f"Unique logRR labels with NaNs: {len(set(y))}")
+    #print(f"Unique logRR labels without NaNs: {len(set(data['target']))}")
     # ---
     X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0, test_size=0.3)
     print(f"Unique logRR labels in training data: {len(set(y_train))}")
