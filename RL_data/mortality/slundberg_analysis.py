@@ -97,6 +97,12 @@ if not load_data:
     data["target"] = y
     data = data.dropna()
 
+    # ---
+    # Drop NaNs from data which goes into analysis: (unlike Slundberg)
+    X = data.drop(["target"], axis=1)
+    y = data["target"]
+    # ---
+
     #--- Data for Shapley calc
     shapley_data = data[features_with_target]
     X_shapley = shapley_data.drop(["target"], axis=1)
@@ -114,21 +120,18 @@ if not load_data:
         print("Only unique patient ids")
 
     train_pids, test_pids = train_test_split(pids, random_state=0, test_size=0.3)
-    strain_pids,valid_pids = train_test_split(train_pids, random_state=0)
+    train_pids, valid_pids = train_test_split(train_pids, random_state=0)
 
     # find the indexes of the samples from the patient ids
     train_inds = np.where([p in train_pids for p in X.index.values])[0]
-    strain_inds = np.where([p in strain_pids for p in X.index.values])[0]
     valid_inds = np.where([p in valid_pids for p in X.index.values])[0]
     test_inds = np.where([p in test_pids for p in X.index.values])[0]
 
     # create the split datasets
     X_train = X.iloc[train_inds,:]
-    X_strain = X.iloc[strain_inds,:]
     X_valid = X.iloc[valid_inds,:]
     X_test = X.iloc[test_inds,:]
     y_train = y[train_inds]
-    y_strain = y[strain_inds]
     y_valid = y[valid_inds]
     y_test = y[test_inds]
 
@@ -157,7 +160,6 @@ if not load_data:
 
     train.to_csv("train_data_slundberg.csv")
     test.to_csv("test_data_slundberg.csv")
-
 
 # ---
 # =============================================================================

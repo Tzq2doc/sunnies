@@ -105,16 +105,6 @@ if not load_data:
 
     data_0 = data[data['sex_isFemale'] == 0]
     data_1 = data[data['sex_isFemale'] == 1]
-    #pids_0 = np.unique(data_0.index.values)
-    #pids_1 = np.unique(data_1.index.values)
-
-
-    # ==============================================
-    # TODO:
-    # calculate the shapley values of the predictions, the residuals, and the labels,
-    # both on the training set and the test set.
-    # hopefully find that blood pressure contributes to the residuals more in females (on the deployed model), when the model is trained only on males
-    # ==============================================
 
     train_0 = data_0.sample(n=400, random_state=1)
     train_1 = data_1.sample(n=4000, random_state=1)
@@ -136,14 +126,6 @@ if not load_data:
     print("Test data: {0}".format(test.shape))
     print("Class 0: {0}".format(test_0.shape))
     print("Class 1: {0}".format(test_1.shape))
-
-    # --- Sanity check
-    #List1 = test.index.values
-    #List2 = train.index.values
-    #print(any(item in List1 for item in List2))
-    #print(test.shape)
-    #print(train.shape)
-
 
     X_train = train.drop(["target"], axis=1)
     X_test = test.drop(["target"], axis=1)
