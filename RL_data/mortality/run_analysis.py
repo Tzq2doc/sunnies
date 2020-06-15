@@ -18,13 +18,15 @@ import sys
 
 
 
-modelname = "retrained_full_model.dat"
-#modelname = "test.dat"
+modelname = "full_model.dat"
+#modelname = "small_xgb.dat"
 
-load_data = False
-Shapley = True
-Pred = False
-Shap = False
+load_data, Shapley, Shap, Pred = [0, 0, 0, 0]
+
+load_data = True
+#Shapley = True
+#Shap = True
+Pred = True
 
 shapley_features = [
     "sex_isFemale",
@@ -62,8 +64,6 @@ drop = ["creatinine", "BUN", "potassium", "sodium", "total_bilirubin",
 # ---
 if not load_data:
     import loadnhanes
-
-
     X,y = loadnhanes._load()
 
     # clean up a bit
@@ -93,7 +93,6 @@ if not load_data:
 
     #--- Data for Shapley calc
     shapley_data = data[features_with_target]
-    #shapley_data = shapley_data.dropna()
     X_shapley = shapley_data.drop(["target"], axis=1)
     X_shapley["sex_isFemale"] = [1 if _x else 0 for _x in X_shapley["sex_isFemale"]]
     labels = X_shapley.columns
@@ -108,16 +107,6 @@ if not load_data:
 
     data_0 = data[data['sex_isFemale'] == 0]
     data_1 = data[data['sex_isFemale'] == 1]
-    #pids_0 = np.unique(data_0.index.values)
-    #pids_1 = np.unique(data_1.index.values)
-
-
-    # ==============================================
-    # TODO:
-    # calculate the shapley values of the predictions, the residuals, and the labels,
-    # both on the training set and the test set.
-    # hopefully find that blood pressure contributes to the residuals more in females (on the deployed model), when the model is trained only on males
-    # ==============================================
 
     train_0 = data_0.sample(n=400, random_state=1)
     train_1 = data_1.sample(n=4000, random_state=1)
@@ -126,7 +115,6 @@ if not load_data:
 
     remainder_0 = data_0.drop(train_0.index)
     remainder_1 = data_1.drop(train_1.index)
-
 
     test_0 = remainder_0.sample(n=1142, random_state=1)
     test_1 = remainder_1.sample(n=1142, random_state=1)
@@ -139,14 +127,6 @@ if not load_data:
     print("Test data: {0}".format(test.shape))
     print("Class 0: {0}".format(test_0.shape))
     print("Class 1: {0}".format(test_1.shape))
-
-    # --- Sanity check
-    #List1 = test.index.values
-    #List2 = train.index.values
-    #print(any(item in List1 for item in List2))
-    #print(test.shape)
-    #print(train.shape)
-
 
     X_train = train.drop(["target"], axis=1)
     X_test = test.drop(["target"], axis=1)
@@ -266,7 +246,7 @@ if Shapley:
     from xgb_regressor import display_shapley
     import shapley
 
-    _sfilename = "shapley_features_{0}.pickle".format(modelname)
+    _sfilename = "results/shapley_features_{0}.pickle".format(modelname)
     if not os.path.isfile(_sfilename):
         with open(_sfilename, 'wb') as _f:
             pickle.dump(labels, _f)
@@ -283,7 +263,7 @@ if Shapley:
 
     for _n, _cf in enumerate(["dcor", "r2", "aidc"]):
         print(_cf)
-        _sfilename = "shapley_expl_{0}_{1}.pickle".format(_cf, modelname)
+        _sfilename = "results/shapley_expl_{0}_{1}.pickle".format(_cf, modelname)
 
         if os.path.isfile(_sfilename):
             with open(_sfilename, 'rb') as _f:
@@ -316,7 +296,7 @@ if Shapley:
 
     for _n, _cf in enumerate(["dcor", "r2", "aidc"]):
         print(_cf)
-        _sfilename = "shapley_pred_{0}_{1}.pickle".format(_cf, modelname)
+        _sfilename = "results/shapley_pred_{0}_{1}.pickle".format(_cf, modelname)
 
         if os.path.isfile(_sfilename):
             with open(_sfilename, 'rb') as _f:
@@ -349,7 +329,7 @@ if Shapley:
 
     for _n, _cf in enumerate(["dcor", "r2", "aidc"]):
         print(_cf)
-        _sfilename = "shapley_res_{0}_{1}.pickle".format(_cf, modelname)
+        _sfilename = "results/shapley_res_{0}_{1}.pickle".format(_cf, modelname)
 
         if os.path.isfile(_sfilename):
             with open(_sfilename, 'rb') as _f:
@@ -377,7 +357,7 @@ if Pred:
     bces = [bce(_y, _p) for _y, _p in zip(y_test, preds)]
     plt.scatter(y_test, (np.log(preds)), c=bces, cmap='viridis')
     plt.colorbar()
-    cbar.set_label(BCE)
+    #cbar.set_label(BCE)
     plt.xlabel("y_test")
     plt.ylabel("log preds")
     plt.show()
