@@ -10,11 +10,27 @@ library(naniar)
 library(ggplot2)
 
 
-dat <- dat_a_few_important(n = 1e3, d1 = 4, d0 = 30)
-out <- binary_tree_shap(dat)
+dat <- dat_a_few_important(n = 1e3, d1 = 4, d0 = 100)
+out <- binary_tree_shapley(dat)
 barplot(out$s)
 attr(dat, "important")
 
+shapley2(dat, utility = DC, targets = list(1,2,3,4,5,6,7,8))
+
+barplot(out$bshaps, beside = T)
+
+# Now we create the binary_k_trees_shapley
+
+# Complexity is O(log2(d)2^(2k)).
+binary_k_trees_shapley <- function(indices) {
+   # 1. Split binary using binary_tree_step until we hit MORE than k groups.
+   #    The number of groups is now even and equal to 2k.
+   # 2. Take between group shapley values.
+   # 3. Select the k greatest groups and split to give 2k groups.
+   # 4. Repeat 2 and 3 
+  
+  
+}
 
 # # Quick test / checking
 # targets <- list(c(1,2,3),c(4,5,6),c(7,8,9))
@@ -44,7 +60,7 @@ binary_tree_step <- function(indices) {
   }
 }
 
-binary_tree_shap <- function(dat, k = 4) {
+binary_tree_shapley <- function(dat, k = 4) {
   d <- ncol(dat)-1; i <- 0
   targets <- binary_tree_step(1:d)
   bshaps <- matrix(0, nrow = 2*log2(d), ncol = 2)
@@ -62,9 +78,9 @@ binary_tree_shap <- function(dat, k = 4) {
   directions <- directions[1:i]
   target_sizes <- target_sizes[1:i]
   #bshaps; directions; target_sizes
-  final_targets <- as.list(unlist(targets))
+  final_targets <- as.list(unique(unlist(targets)))
   s <- shapley2(dat, utility = DC, targets = final_targets)
-  names(s) <- unlist(final_targets)
+  names(s) <- unique(unlist(final_targets))
   return(list(s=s, bshaps = bshaps, directions = directions,
               target_sizes = target_sizes))
 }
@@ -256,3 +272,4 @@ shapley_v2 <- function(CF, v) {
 
 
 shapley_vec2 <- Vectorize(shapley_v2, "v")
+

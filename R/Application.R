@@ -9,6 +9,10 @@ library(dplyr)
 library(naniar)
 library(ggplot2)
 
+
+
+
+
 ### Python data and python model --------------------------------------------
 # dat_python_tr <- read.csv("../RL_data/train_data_5050.csv") # even male/female
 # dat_python_te <- read.csv("../RL_data/test_data_9010.csv") # 90% women and 10% men
@@ -34,8 +38,6 @@ library(ggplot2)
 # log(preds)
 
 
-
-
 # RAW data ----------------------------------------------------------------
 Xh <- read.csv("../RL_data/X_data_with_header.csv")
 X <- read.csv("../RL_data/X_data.csv", header = F)
@@ -47,6 +49,31 @@ Xh <- as_tibble(Xh)
 names(Xh); nrow(Xh); nrow(X); nrow(y)
 sum(Xh[["sex_isFemale"]] == F)
 
+
+
+# C-statistic business ----------------------------------------------------
+c_statistic_harrell <- function(pred, labels) {
+  total <- 0 
+  matches <- 0 
+  for (i in 1:length(labels)) {
+    for (j in 1:length(labels)) {
+      if (labels[j] > 0 && abs(labels[i]) > labels[j]) {
+        total <- total + 1
+        if (pred[j] > pred[i]) {
+          matches <- matches + 1
+        }
+      }
+    }
+  }
+  return(matches/total)
+}
+
+labels <- as.numeric(y[[1]])
+c_statistic_harrell(runif(nrow(y),-0.3,-0.2), labels)
+sum(labels > 0)/length(labels)
+
+
+# MISSINGNESS -------------------------------------------------------------
 #### MISSINGNESS
 # None of the y values are missing
 any(!is.finite(y[[1]]))

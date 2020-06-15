@@ -92,8 +92,8 @@ shapley_v <- function(CF, v) {
   for ( s in team_sizes ) {
     value_s <- 0
     teams_of_size_s <- if (length(players) != 1) {
-      combn(players, s, simplify = F)} else 
-      {list(players)}
+      combn(players, s, simplify = F)} else if (s == 1) 
+      {list(players)} else {list(integer())}
     for ( team in teams_of_size_s ) {
       value_in_team <- CF(c(v,team)) - CF(team)
       value_s <- value_s + value_in_team

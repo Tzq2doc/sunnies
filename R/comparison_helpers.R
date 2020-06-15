@@ -135,8 +135,8 @@ n1_calc_df <- function(n1, p1f, p2f, n, nm) {
   df <- n - n1*(K1-K2)/(K1+1) - nm*(K2+1)
   return(df*(df > 0))
 }
-n1 <- 10000:14000; n <- 10000
-plot(n1, n1_calc_df(n1, 0.5, 0.9, n, 5765), type = 'l')
+#n1 <- 10000:14000; n <- 10000
+#plot(n1, n1_calc_df(n1, 0.5, 0.9, n, 5765), type = 'l')
 
 
 compare_label_shapleys <- function(sdat, features, 
@@ -454,25 +454,27 @@ run_evaluations <- function(data_gen, utility, n = 1e3,  plots = F, ...) {
   cat("---\n")
   examine_utility(dat$dat, utility)
   cat("---\n")
-  shaps_train <- shapley(cbind(dat$y_train, dat$x_train), utility = utility)
   shaps_test <- shapley(cbind(dat$y_test, dat$x_test), utility = utility)
-  shaps_preds_train <- shapley(
-    cbind(xgb$pred_train, dat$x_train), utility = utility)
+  shaps_train <- shapley(cbind(dat$y_train, dat$x_train), utility = utility)
   shaps_preds_test <- shapley(
     cbind(xgb$pred_test, dat$x_test), utility = utility)
-  shaps_diff_train <- shaps_preds_train - shaps_train
+  shaps_preds_train <- shapley(
+    cbind(xgb$pred_train, dat$x_train), utility = utility)
   shaps_diff_test <- shaps_preds_test - shaps_test
-  shaps_res_train <- shapley(xgb$residuals_train, dat$x_train, utility = DC)
+  shaps_diff_train <- shaps_preds_train - shaps_train
   shaps_res_test <- shapley(xgb$residuals_test, dat$x_test, utility = DC)
+  shaps_res_train <- shapley(xgb$residuals_train, dat$x_train, utility = DC)
   cat("Sunnies test: ", shaps_test, "\n")
   cat("Sunnies train: ", shaps_train, "\n")
-  cat("Sunnies preds train: ", shaps_preds_train, "\n")
   cat("Sunnies preds test: ", shaps_preds_test, "\n")
-  cat("Sunnies diffs (pred-lab) train: ", shaps_diff_test, "\n")
+  cat("Sunnies preds train: ", shaps_preds_train, "\n")
   cat("Sunnies diffs (pred-lab) test: ", shaps_diff_test, "\n")
+  cat("Sunnies diffs (pred-lab) train: ", shaps_diff_train, "\n")
+  cat("Sunnies res test: ", shaps_res_test, "\n")
+  cat("Sunnies res train: ", shaps_res_train, "\n")
   cat("---\n")
-  SHAP_train <- examine_SHAP(xgb$bst, dat$x_train, plots = plots)
   SHAP_test <- examine_SHAP(xgb$bst, dat$x_test, plots = plots)
+  SHAP_train <- examine_SHAP(xgb$bst, dat$x_train, plots = plots)
   if (plots) {
     barplot(imp$Gain, main = "xgb.importance", names.arg = imp$Feature)
     barplot(SHAP_train$shapm, main = "SHAP train")
