@@ -12,7 +12,6 @@ library(ggplot2)
 
 
 
-
 ### Python data and python model --------------------------------------------
 # dat_python_tr <- read.csv("../RL_data/train_data_5050.csv") # even male/female
 # dat_python_te <- read.csv("../RL_data/test_data_9010.csv") # 90% women and 10% men

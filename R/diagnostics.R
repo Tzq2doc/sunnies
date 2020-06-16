@@ -99,22 +99,36 @@ n <- 1e3; d <- 5
 X <- matrix(rnorm(n*(d-2),0,1), nrow = n, ncol = (d-2))
 X1 <- sample(0:1, replace = T, n)
 X2 <- sample(0:1, replace = T, n)
-y <- rowSums(X[,-(d-2)]) + xor(X1,X2) + xor(X1,X2)*X[,(d-2)]
-y <- rowSums(X[,-(d-2)]) + 5*(X1 & X2)*X[,(d-2)] 
+#y <- rowSums(X[,-(d-2)]) + xor(X1,X2) + xor(X1,X2)*X[,(d-2)]
+y <- rowSums(X[,-(d-2)]) + 5*(X1 & X2)*X[,(d-2)] + rnorm(n,0,0.1)
 dat <- cbind(y,X,X1,X2) #,X1,X2
-
-
 sdat <- split_dat(dat, df = T)
-
-#lmodel <- lm(y ~ . + I(sign(x2)*x3*x4), dat = sdat$df_yx_train)
+check_model <- function(sdat, lmodel) {
+  lm_pred_test <- predict(lmodel, data.frame(sdat$x_test))
+  plot(sdat$y_test, lm_pred_test, xlab = "labels", ylab = "predictions")
+  slm <- summary(lmodel); slm
+  slabs <- shapley(sdat$y_test, sdat$x_test, utility = DC)
+  spred <- shapley(lm_pred_test, sdat$x_test, utility = DC)
+  sresd <- shapley(round(lm_pred_test - sdat$y_test, digits = 10), 
+                   sdat$x_test, utility = DC)
+  barplot(rbind(slabs, spred, sresd),
+          xlab = "Feature",
+          ylab = "Attribution",
+          col = c("black","gray","red"),
+          beside = T)
+  legend(x = "top", legend = c("labels","predictions","residuals"), 
+         col = c("black","gray","red"), pch = c(15,15,15))
+}
 lmodel <- lm(y ~ x1 + x2 + x3 + x4 + x5, dat = sdat$df_yx_train)
-lmodel_perfect <- lm(y ~ x1 + x2 + x3:x4:x5, dat = sdat$df_yx_train)
+check_model(sdat,lmodel)
+lmodel_perfect <- lm(y ~ x1 + x2 + x3 + x4 + x5 + x3:x4:x5, dat = sdat$df_yx_train)
+check_model(sdat,lmodel_perfect)
+
+#plot(lmodel)
 lm_pred_test <- predict(lmodel, data.frame(sdat$x_test))
 plot(sdat$y_test, lm_pred_test, xlab = "labels", ylab = "predictions")
 slm <- summary(lmodel); slm
 coefs <- slm$coefficients[,"Estimate"]
-#plot(lmodel)
-
 slabs <- shapley(sdat$y_test, sdat$x_test, utility = DC)
 spred <- shapley(lm_pred_test, sdat$x_test, utility = DC)
 sresd <- shapley(round(lm_pred_test - sdat$y_test, digits = 10), 
