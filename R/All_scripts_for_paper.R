@@ -53,11 +53,15 @@ for (t in 0:m) {
 }
 #saveRDS(cdN_all, "run1_cdN_drift.Rds")
 #saveRDS(mse, "run1_cdN_drift_mse.Rds")
-plot_compare_DARRP_N_drift <- function(cdN_all, p = c(0.025,0.975), main) {
-  feature_names <- dimnames(cdN)[[2]]
-  cd <- apply(cdN, FUN = mean, MARGIN = c(1,2))
-  cd_L <- apply(cdN, FUN = quantile, MARGIN = c(1,2), probs = p[1])
-  cd_U <- apply(cdN, FUN = quantile, MARGIN = c(1,2), probs = p[2])
+plot_compare_DARRP_N_drift <- function(cdN_all, p = c(0.025,0.975), 
+                                       feature_names = paste0("x", 1:4),
+                                       main = "test run") {
+  m <- dim(cdN_all)[4]
+  for (t in 1:m) {
+    cdt <- apply(cdN_all[,,,t], FUN = mean, MARGIN = c(1,2))
+    cdt_L <- apply(cdN_all[,,,t], FUN = quantile, MARGIN = c(1,2), probs = p[1])
+    cdt_U <- apply(cdN_all[,,,t], FUN = quantile, MARGIN = c(1,2), probs = p[2])
+  }
   
 }
 plot_compare_DARRP_N_drift(cdN_all[,,,3], main = "test run", all_labs = F)
