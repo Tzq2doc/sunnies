@@ -153,14 +153,14 @@ compare_label_shapleys <- function(sdat, features,
          col = c("black","gray"), pch = c(15,15))
 }
 
-compare_DARRP <- function(sdat, xgbt, features, 
+compare_DARRP <- function(sdat, modelt, features, 
                           feature_names, 
                           utility = DC,
                           sample_size = 1e3,
-                          valid = F) {
+                          valid = F, all_labs = T) {
   
-  if (valid & is.null(xgbt$pred_valid)) {stop(paste0("Make sure",
-    "xgbt holds validation set results when valid = TRUE"))}
+  if (valid & is.null(modelt$pred_valid)) {stop(paste0("Make sure",
+    "modelt holds validation set results when valid = TRUE"))}
   samp_train <- 1:nrow(sdat$x_train)
   samp_test <- 1:nrow(sdat$x_test)
   samp_valid <- if(valid) {1:nrow(sdat$x_valid)} else {NULL}
@@ -175,16 +175,16 @@ compare_DARRP <- function(sdat, xgbt, features,
   y1 <- as.matrix(sdat$y_test)[samp_test,,drop = F]
   y2 <- as.matrix(sdat$y_train)[samp_train,,drop = F]
   y3 <- if(valid) {as.matrix(sdat$y_valid)[samp_valid,,drop = F]} else {NULL}
-  p1 <- as.matrix(xgbt$pred_test)[samp_test,,drop = F]
-  p2 <- as.matrix(xgbt$pred_train)[samp_train,,drop = F]
-  p3 <- if(valid) {as.matrix(xgbt$pred_valid)[samp_valid,,drop = F]} else {NULL}
-  r1 <- as.matrix(xgbt$residuals_test)[samp_test,,drop = F]
-  r2 <- as.matrix(xgbt$residuals_train)[samp_train,,drop = F]
-  r3 <- if(valid) {as.matrix(xgbt$residuals_valid)[samp_valid,,drop = F]} else {NULL}
+  p1 <- as.matrix(modelt$pred_test)[samp_test,,drop = F]
+  p2 <- as.matrix(modelt$pred_train)[samp_train,,drop = F]
+  p3 <- if(valid) {as.matrix(modelt$pred_valid)[samp_valid,,drop = F]} else {NULL}
+  r1 <- as.matrix(modelt$residuals_test)[samp_test,,drop = F]
+  r2 <- as.matrix(modelt$residuals_train)[samp_train,,drop = F]
+  r3 <- if(valid) {as.matrix(modelt$residuals_valid)[samp_valid,,drop = F]} else {NULL}
   y <- rbind(y1,y2,y3)
   X <- rbind(X1,X2,X3)
   
-  s0 <- shapley(y, X, utility = utility)
+  s0 <- if(all_labs) {shapley(y, X, utility = utility)} else {NULL}
   s1 <- shapley(y1, X1, utility = utility)
   s2 <- shapley(y2, X2, utility = utility)
   s3 <- if (valid) {shapley(y3, X3, utility = utility)} else {NULL}
@@ -200,18 +200,18 @@ compare_DARRP <- function(sdat, xgbt, features,
   return(s)
 }
 
-compare_DARRP_N <- function(sdat, xgbt, features, 
+compare_DARRP_N <- function(sdat, modelt, features, 
                             feature_names, 
                             utility = DC,
                             sample_size = 1e3, N = 100,
-                            valid = F) {
+                            valid = F, all_labs = T) {
   d <- length(features)
-  cd <- array(dim = c(7 + valid*3,d,N))
+  cd <- array(dim = c(6 + valid*3 + all_labs, d, N))
   for (i in 1:N) {
-    cdi <- compare_DARRP(sdat, xgbt, features, 
+    cdi <- compare_DARRP(sdat, modelt, features, 
                          feature_names, utility = DC,
                          sample_size = sample_size,
-                         valid = valid)
+                         valid = valid, all_labs = all_labs)
     cd[,,i] <- cdi
     
   }
@@ -219,13 +219,14 @@ compare_DARRP_N <- function(sdat, xgbt, features,
   return(cd)
 }
 
-plot_compare_DARRP_N <- function(cdN, p = c(0.025,0.975), main, valid = F) {
+plot_compare_DARRP_N <- function(cdN, p = c(0.025,0.975), main, valid = F,
+                                 all_labs = T) {
    feature_names <- dimnames(cdN)[[2]]
    cd <- apply(cdN, FUN = mean, MARGIN = c(1,2))
    cd_L <- apply(cdN, FUN = quantile, MARGIN = c(1,2), probs = p[1])
    cd_U <- apply(cdN, FUN = quantile, MARGIN = c(1,2), probs = p[2])
 
-   centers <- plot_compare_DARRP(cd, main = main, valid = valid)
+   centers <- plot_compare_DARRP(cd, main = main, valid = valid, all_labs = all_labs)
    arrows(centers, cd_L, centers, cd_U, 
           lwd = 1.5, angle = 90, code = 3, length = 0.05)
    segments(centers, cd_L, centers, cd_U, lwd = 1.5)
@@ -233,24 +234,25 @@ plot_compare_DARRP_N <- function(cdN, p = c(0.025,0.975), main, valid = F) {
 
 plot_compare_DARRP <- function(s,
      leg_loc = "topright", main = "untitled",
-     valid = F) {
+     valid = F, all_labs = T) {
   if(!valid) {
-    legend <- c("ERDA all","ERDA test","ERDA train",
+    legend <- c("ERDA test","ERDA train",
       "PDA test", "PDA train", 
       "RDA test","RDA train")
+    cols <- c("gray50","gray75",
+              "blue", "lightblue",
+              "darkred","red3") 
   } else {
-    legend <- c("ERDA all","ERDA test", "ERDA train", "ERDA valid",
+    legend <- c("ERDA test", "ERDA train", "ERDA valid",
         "PDA test", "PDA train",  "PDA valid",
         "RDA test","RDA train", "RDA valid")
+    cols <- c("gray50","gray75","gray100",
+              "blue", "lightblue","lightsteelblue2",
+              "darkred","red3","violetred3")
   }
-  if (!valid) {
-    cols <- c("gray25","gray50","gray75",
-      "blue", "lightblue",
-      "darkred","red3") 
-  } else {
-    cols <- c("gray25","gray50","gray75","gray100",
-        "blue", "lightblue","lightsteelblue2",
-        "darkred","red3","violetred3")
+  if (all_labs) {
+    legend <- c("ERDA all", legend)
+    cols <- c("gray25", cols)
   }
   centers <- barplot(s,
                xlab = "Feature",
@@ -295,6 +297,18 @@ compare_DARRRP_N_gender_3way <- function(
   return(list(cdN = cdN, xgb = xgb, xgbt = xgbt))
 }
 
+
+basic_lmodel_test <- function(lmodel, dat, plots = F) {
+  pred_test <- predict(lmodel, dat$df_yx_test)
+  pred_train <- predict(lmodel, dat$df_yx_train)
+  residuals_test <- dat$y_test - pred_test
+  residuals_train <- dat$y_train - pred_train
+  if (plots) {plot(pred_test, dat$y_test)}
+  return(list(pred_test = pred_test,
+              pred_train = pred_train,
+              residuals_test = residuals_test,
+              residuals_train = residuals_train))
+}
 
 diagnostics <- function(sdat, xgbt, plot = "all", 
                         features = 1:ncol(sdat$x_test),

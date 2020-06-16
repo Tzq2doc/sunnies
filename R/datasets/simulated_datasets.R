@@ -132,8 +132,8 @@ dat_concon_XOR <- function(n = 100) {
 ###############################
 # Discrete features with discrete labels XOR
 dat_catcat_XOR <- function(n = 1e3) {
-  x1 <- sample(c(rep(0,floor(n)),rep(1,floor(n))), n)
-  x2 <- sample(c(rep(0,floor(n)),rep(1,floor(n))), n)
+  x1 <- sample(0:1, n, replace = T)
+  x2 <- sample(0:1, n, replace = T)
   y  <- as.integer(xor(x1,x2))
   dat <- cbind(y,x1,x2)
   colnames(dat) <- c("y",paste0("x",1:2))
