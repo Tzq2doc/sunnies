@@ -6,6 +6,8 @@ source("shapley_helpers.R")
 source("Applications_helpers.R")
 library(xgboost)
 library(dplyr)
+library(tidyr)
+library(ggplot2)
 
 ### ERDA Example 1 -----------------------------------------------------------
 # The repetitions producing violin plots is in python, but here is similar:
@@ -53,18 +55,56 @@ for (t in 0:m) {
 }
 #saveRDS(cdN_all, "run1_cdN_drift.Rds")
 #saveRDS(mse, "run1_cdN_drift_mse.Rds")
+cdN_all <- readRDS("run1_cdN_drift.Rds")
+mse <- readRDS("run1_cdN_drift_mse.Rds")
 plot_compare_DARRP_N_drift <- function(cdN_all, p = c(0.025,0.975), 
-                                       feature_names = paste0("x", 1:4),
-                                       main = "test run") {
+                                       d = dim(cdN_all)[2],
+                                       feature_names = paste0("x",1:d),
+                                       main = "test run",
+                                       shap_index = 1) {
   m <- dim(cdN_all)[4]
+  cd <- array(dim = c(0,d))
   for (t in 1:m) {
-    cdt <- apply(cdN_all[,,,t], FUN = mean, MARGIN = c(1,2))
-    cdt_L <- apply(cdN_all[,,,t], FUN = quantile, MARGIN = c(1,2), probs = p[1])
-    cdt_U <- apply(cdN_all[,,,t], FUN = quantile, MARGIN = c(1,2), probs = p[2])
+    cd <- cdN_all[shap_index,,,t] %>% 
+      apply(MARGIN = 1, FUN = function(x){ 
+        c(mean(x), quantile(x, probs = p)) 
+      }) %>% rbind(cd, .)
   }
+  colnames(cd) <- feature_names
+  cd <- cd %>% 
+    cbind(CI = 1:3, time = rep(1:10, each = 3)) %>% 
+    data.frame() %>% 
+    pivot_longer(all_of(feature_names), names_to = "feature") %>% 
+    pivot_wider(names_from = CI, values_from = value, names_prefix = "CI")
+  
+  p <- ggplot(data=cd, aes(x=time, y=CI1, colour=feature)) + 
+    geom_point() + 
+    geom_line()
+  p <- p + 
+    geom_ribbon(aes(ymin=CI2, ymax=CI3), 
+                linetype=2, alpha=0.1)
+  p
+  
+  ggplot(dat, aes(x = x1, y = resp, color = grp) ) +
+    geom_point() +
+    geom_smooth(method = "lm", alpha = .15, aes(fill = grp))
   
 }
 plot_compare_DARRP_N_drift(cdN_all[,,,3], main = "test run", all_labs = F)
+#cd <- rep(list(array(NA, dim = c(m,d))),3)
+#names(cd) <- c("cd","cd_L","cd_U")
+#cd$cd[t,] <- apply(vals, FUN = mean, MARGIN = 1)
+#cd$cd_L[t,] <- apply(vals, FUN = quantile, MARGIN = 1, probs = p[1])
+#cd$cd_U[t,] <- apply(vals, FUN = quantile, MARGIN = 1, probs = p[2])
+#cd <- lapply(cd, function(x) {
+#  colnames(x) <- feature_names
+#  cbind(time = 1:m, x)
+#  pivot_longer(data.frame(x), all_of(feature_names))
+#})
+#matrix(cd)
+#data.frame(test, rownames(test))
+
+
 #pdf("diagnostics_drift.pdf", width = 6, height = 3)
 #par(mfrow = c(1,3))
 matplot(x = 0:m, y = shaps_res, type = 'b', 
