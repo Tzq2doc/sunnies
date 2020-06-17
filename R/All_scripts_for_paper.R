@@ -8,6 +8,9 @@ library(xgboost)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
+library(latex2exp)
+library(reticulate)
+library(reshape2)
 
 ### ERDA Example 1 -----------------------------------------------------------
 # The repetitions producing violin plots is in python, but here is similar:
@@ -57,40 +60,149 @@ for (t in 0:m) {
 #saveRDS(mse, "run1_cdN_drift_mse.Rds")
 cdN_all <- readRDS("run1_cdN_drift.Rds")
 mse <- readRDS("run1_cdN_drift_mse.Rds")
-plot_compare_DARRP_N_drift <- function(cdN_all, p = c(0.025,0.975), 
-                                       d = dim(cdN_all)[2],
-                                       feature_names = paste0("x",1:d),
-                                       main = "test run",
-                                       shap_index = 1) {
+plot_compare_DARRP_N_drift <- function(
+  cdN_all, p = c(0.025,0.975),
+  feature_names = paste0("X",1:d), 
+  shap_index = c(1,5), #only two allowed
+  shap_type = c("ADL", "ADR"), 
+  y_name = "Shapley value",
+  leg_labs = unname(c(TeX("$X_1"),TeX("$X_2"),TeX("$X_3"),TeX("$X_4")))) {
+  
   m <- dim(cdN_all)[4]
-  cd <- array(dim = c(0,d))
+  d <- dim(cdN_all)[2]
+  cd2 <- matrix(ncol = d, nrow = 0)
   for (t in 1:m) {
-    cd <- cdN_all[shap_index,,,t] %>% 
-      apply(MARGIN = 1, FUN = function(x){ 
+    cdt <- cdN_all[shap_index,,,t] %>% 
+      apply(MARGIN = c(1,2), FUN = function(x){ 
         c(mean(x), quantile(x, probs = p)) 
-      }) %>% rbind(cd, .)
+      })
+    for (i in 1:length(shap_index)) {cd2 <- rbind(cd2, cdt[,i,])}
   }
-  colnames(cd) <- feature_names
-  cd <- cd %>% 
-    cbind(CI = 1:3, time = rep(1:10, each = 3)) %>% 
+  colnames(cd2) <- feature_names
+  cd2 <- cd2 %>% 
     data.frame() %>% 
+    cbind(S = rep(shap_type,each=3), 
+          CI = 1:3, time = rep(0:(m-1), each = 6)) %>% 
     pivot_longer(all_of(feature_names), names_to = "feature") %>% 
     pivot_wider(names_from = CI, values_from = value, names_prefix = "CI")
   
-  p <- ggplot(data=cd, aes(x=time, y=CI1, colour=feature)) + 
-    geom_point() + 
-    geom_line()
-  p <- p + 
-    geom_ribbon(aes(ymin=CI2, ymax=CI3), 
-                linetype=2, alpha=0.1)
-  p
-  
-  ggplot(dat, aes(x = x1, y = resp, color = grp) ) +
-    geom_point() +
-    geom_smooth(method = "lm", alpha = .15, aes(fill = grp))
-  
+  plt <- ggplot(data=cd2, aes(x=time, y=CI1, colour=feature, fill=feature,
+                             shape=feature, linetype=feature)) + 
+    geom_point() + geom_line() +
+    geom_ribbon(aes(ymin=CI2, ymax=CI3), alpha=0.1) +
+    scale_x_continuous(breaks = 0:m) +
+    scale_y_continuous(name = y_name) +
+    scale_colour_discrete(labels=leg_labs) +
+    scale_shape_discrete(labels=leg_labs) +
+    scale_fill_discrete(labels=leg_labs) +
+    scale_linetype_discrete(labels=leg_labs) + 
+    theme_set(theme_minimal())  +
+    facet_grid(S ~ .) +
+    theme(strip.text.y.right = element_text(angle = 0))
+  return(plt)
 }
-plot_compare_DARRP_N_drift(cdN_all[,,,3], main = "test run", all_labs = F)
+pdf(file="Drift_ADL_ADR.pdf",width=5,height=4)
+plot_compare_DARRP_N_drift(cdN_all, shap_index = c(1,5))
+dev.off()
+
+
+plot_compare_DARRP_N_drift2 <- function(
+  cdN_all, p = c(0.025,0.975), d = dim(cdN_all)[2],
+  feature_names = paste0("X",1:d), shap_index = c(1,5), #only two allowed
+  shap_type = c("ADL", "ADR"), y_name = "Shapley value",
+  leg_labs = unname(c(TeX("$X_1"),TeX("$X_2"),TeX("$X_3"),TeX("$X_4")))) {
+  
+  m <- dim(cdN_all)[4]
+  N <- dim(cdN_all)[3]
+  d <- dim(cdN_all)[2]
+  s <- dim(cdN_all)[1]
+  dimnames(cdN_all) <- list(
+    S = 1:s, feature = paste0("X",1:d), i = 1:N, t = 0:(m-1))
+  cdN_lines <- as_tibble(reshape2::melt(cdN_all)) %>% 
+    dplyr::filter(S %in% shap_index)
+  cdN_lines$S <- rep(shap_type, nrow(cdN_lines)/2)
+  cd2 <- matrix(ncol = d, nrow = 0)
+  for (t in 1:m) {
+    cdt <- cdN_all[shap_index,,,t] %>% 
+      apply(MARGIN = c(1,2), FUN = function(x){ 
+        c(mean(x), quantile(x, probs = p)) 
+      })
+    for (i in 1:length(shap_index)) {cd2 <- rbind(cd2, cdt[,i,])}
+  }
+  colnames(cd2) <- feature_names
+  cd2 <- cd2 %>% 
+    data.frame() %>% 
+    cbind(S = rep(shap_type,each=3), 
+          CI = 1:3, time = rep(0:(m-1), each = 6)) %>% 
+    pivot_longer(all_of(feature_names), names_to = "feature") %>% 
+    pivot_wider(names_from = CI, values_from = value, names_prefix = "CI")
+  
+  plt <- ggplot(data=cd2, aes(x=time, y=CI1, fill=feature,
+                              shape=feature)) + 
+    geom_point() + geom_line() +
+    geom_ribbon(aes(ymin=CI2, ymax=CI3), alpha=0.1) +
+    scale_x_continuous(breaks = 0:m) +
+    scale_y_continuous(name = y_name) +
+    scale_shape_discrete(labels=leg_labs) +
+    scale_fill_discrete(labels=leg_labs) +
+    theme_set(theme_minimal())  +
+    facet_grid(S ~ .) +
+    theme(strip.text.y.right = element_text(angle = 0)) +
+    geom_line(data = cdN_lines,
+              mapping = aes(y=value, x=t, group=interaction(i,feature),
+                            colour=interaction(i,feature)),
+              alpha=0.02, colour="grey20"); plt
+  return(plt)
+}
+pdf(file="Drift_ADL_ADR_lines.pdf",width=6,height=5)
+plot_compare_DARRP_N_drift2(cdN_all, shap_index = c(1,5))
+dev.off()
+
+ggplot() +
+geom_line(data = dplyr::filter(cdN_lines, S == "ADR",
+                               feature == 1), 
+          mapping = aes(y=value, x=t, group=i),
+          alpha=1, colour="grey20")
+
+
+
+X11(); plt
+
+
+
+
+
+
+df <- dcast(melt(cdN_all), Var1+Var2~Var3) 
+test <- apply(cdN_all, 1L, c)
+expand.grid(dimnames(cdN_all)[1:2])
+
+#m <- dim(cdN_all)[4]
+#cd <- array(dim = c(0,d))
+#for (t in 1:m) {
+#  cd <- cdN_all[shap_index,,,t] %>% 
+#    apply(MARGIN = 1, FUN = function(x){ 
+#      c(mean(x), quantile(x, probs = p)) 
+#    }) %>% rbind(cd, .)
+#}
+#colnames(cd) <- feature_names
+#cd <- cd %>% 
+#  cbind(CI = 1:3, time = rep(0:(m-1), each = 3)) %>% 
+#  data.frame() %>% 
+#  pivot_longer(all_of(feature_names), names_to = "feature") %>% 
+#  pivot_wider(names_from = CI, values_from = value, names_prefix = "CI")
+#
+#plt <- ggplot(data=cd, aes(x=time, y=CI1, colour=feature, fill=feature,
+#                           shape=feature, linetype=feature)) + 
+#  geom_point() + geom_line() +
+#  geom_ribbon(aes(ymin=CI2, ymax=CI3), linetype=2, alpha=0.1) +
+#  scale_x_continuous(breaks = 0:m) +
+#  scale_y_continuous(name = y_name) +
+#  scale_colour_discrete(labels=leg_labs) +
+#  scale_shape_discrete(labels=leg_labs) +
+#  scale_fill_discrete(labels=leg_labs) +
+#  scale_linetype_discrete(labels=leg_labs) + 
+#  theme_set(theme_minimal())
 #cd <- rep(list(array(NA, dim = c(m,d))),3)
 #names(cd) <- c("cd","cd_L","cd_U")
 #cd$cd[t,] <- apply(vals, FUN = mean, MARGIN = 1)
@@ -103,7 +215,6 @@ plot_compare_DARRP_N_drift(cdN_all[,,,3], main = "test run", all_labs = F)
 #})
 #matrix(cd)
 #data.frame(test, rownames(test))
-
 
 #pdf("diagnostics_drift.pdf", width = 6, height = 3)
 #par(mfrow = c(1,3))
