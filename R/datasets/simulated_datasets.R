@@ -10,6 +10,19 @@
 # dat_categorical_XOR
 # dat_continuous_XOR
 
+###############################
+dat_t <- function(n, d, t, max_t, extra_features = T, de = 46) {
+  X <- matrix(rnorm(n*d,0,2), nrow = n, ncol = d)
+  extras <- if (extra_features) {
+    Xe <- matrix(rnorm(n*de,0,sqrt(0.05)), nrow = n, ncol = de)
+    rowSums(Xe)
+  } else {0}
+  y <- X %*% c(rep(1,d-2), 1 + t/max_t, 1 - t/max_t) + extras
+  
+  if (extra_features) {return(cbind(y,X,Xe))}
+  return(cbind(y,X))
+}
+
 
 ###############################
 dat_a_few_important <- function(n = 1e3, d1 = 4, d0 = 10,
