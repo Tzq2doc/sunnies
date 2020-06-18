@@ -219,6 +219,97 @@ compare_DARRP_N <- function(sdat, modelt, features,
   return(cd)
 }
 
+plot_compare_DARRP_N_drift2 <- function(
+  cdN_all, p = c(0.025,0.975), d = dim(cdN_all)[2],
+  feature_names = paste0("X",1:d), shap_index = c(1,5), #only two allowed
+  shap_type = c("ADL", "ADR"), y_name = "Shapley value",
+  leg_labs = unname(c(TeX("$X_1"),TeX("$X_2"),TeX("$X_3"),TeX("$X_4")))) {
+  
+  m <- dim(cdN_all)[4]
+  N <- dim(cdN_all)[3]
+  d <- dim(cdN_all)[2]
+  s <- dim(cdN_all)[1]
+  dimnames(cdN_all) <- list(
+    S = 1:s, feature = paste0("X",1:d), i = 1:N, t = 0:(m-1))
+  cdN_lines <- as_tibble(reshape2::melt(cdN_all)) %>%
+    dplyr::filter(S %in% shap_index)
+  cdN_lines$S <- rep(shap_type, nrow(cdN_lines)/2)
+  cd2 <- matrix(ncol = d, nrow = 0)
+  for (t in 1:m) {
+    cdt <- cdN_all[shap_index,,,t] %>%
+      apply(MARGIN = c(1,2), FUN = function(x){
+        c(mean(x), quantile(x, probs = p))
+      })
+    for (i in 1:length(shap_index)) {cd2 <- rbind(cd2, cdt[,i,])}
+  }
+  colnames(cd2) <- feature_names
+  cd2 <- cd2 %>%
+    data.frame() %>%
+    cbind(S = rep(shap_type,each=3),
+          CI = 1:3, time = rep(0:(m-1), each = 6)) %>%
+    pivot_longer(all_of(feature_names), names_to = "feature") %>%
+    pivot_wider(names_from = CI, values_from = value, names_prefix = "CI")
+  
+  plt <- ggplot(data=cd2, aes(x=time, y=CI1, fill=feature,
+                              shape=feature)) +
+    geom_point() + geom_line() +
+    geom_ribbon(aes(ymin=CI2, ymax=CI3), alpha=0.1) +
+    scale_x_continuous(breaks = 0:m) +
+    scale_y_continuous(name = y_name) +
+    scale_shape_discrete(labels=leg_labs) +
+    scale_fill_discrete(labels=leg_labs) +
+    theme_set(theme_minimal())  +
+    facet_grid(S ~ .) +
+    theme(strip.text.y.right = element_text(angle = 0)) +
+    geom_line(data = cdN_lines,
+              mapping = aes(y=value, x=t, group=interaction(i,feature),
+                            colour=interaction(i,feature)),
+              alpha=0.02, colour="grey20"); plt
+  return(plt)
+}
+
+plot_compare_DARRP_N_drift <- function(
+  cdN_all, p = c(0.025,0.975),
+  d = dim(cdN_all)[2],
+  feature_names = paste0("X",1:d), 
+  shap_index = c(1,5), #only two allowed
+  shap_type = c("ADL", "ADR"), 
+  y_name = "Shapley value",
+  leg_labs = unname(c(TeX("$X_1"),TeX("$X_2"),TeX("$X_3"),TeX("$X_4")))) {
+  
+  m <- dim(cdN_all)[4]
+  cd2 <- matrix(ncol = d, nrow = 0)
+  for (t in 1:m) {
+    cdt <- cdN_all[shap_index,,,t] %>% 
+      apply(MARGIN = c(1,2), FUN = function(x){ 
+        c(mean(x), quantile(x, probs = p)) 
+      })
+    for (i in 1:length(shap_index)) {cd2 <- rbind(cd2, cdt[,i,])}
+  }
+  colnames(cd2) <- feature_names
+  cd2 <- cd2 %>% 
+    data.frame() %>% 
+    cbind(S = rep(shap_type,each=3), 
+          CI = 1:3, time = rep(0:(m-1), each = 6)) %>% 
+    pivot_longer(all_of(feature_names), names_to = "feature") %>% 
+    pivot_wider(names_from = CI, values_from = value, names_prefix = "CI")
+  
+  plt <- ggplot(data=cd2, aes(x=time, y=CI1, colour=feature, fill=feature,
+                              shape=feature, linetype=feature)) + 
+    geom_point() + geom_line() +
+    geom_ribbon(aes(ymin=CI2, ymax=CI3), alpha=0.1) +
+    scale_x_continuous(breaks = 0:m) +
+    scale_y_continuous(name = y_name) +
+    scale_colour_discrete(labels=leg_labs) +
+    scale_shape_discrete(labels=leg_labs) +
+    scale_fill_discrete(labels=leg_labs) +
+    scale_linetype_discrete(labels=leg_labs) + 
+    theme_set(theme_minimal())  +
+    facet_grid(S ~ .) +
+    theme(strip.text.y.right = element_text(angle = 0))
+  return(plt)
+}
+
 plot_compare_DARRP_N <- function(cdN, p = c(0.025,0.975), main, valid = F,
                                  all_labs = T) {
    feature_names <- dimnames(cdN)[[2]]
