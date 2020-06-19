@@ -268,6 +268,208 @@ plot_compare_DARRP_N_drift2 <- function(
   return(plt)
 }
 
+plot_compare_DARRP_N_interact_all <- function(
+  cdN_all, p = c(0.025,0.975),
+  d = dim(cdN_all)[2],
+  feature_names = paste0("X",1:d),
+  y_name = "Shapley value",
+  leg_labs = unname(TeX(paste0("$X_",1:d))),
+  colpal=c("#CC79A7", "#0072B2", "#D55E00")) {
+  
+  s <- dim(cdN_all)[1]
+  d <- dim(cdN_all)[2]
+  N <- dim(cdN_all)[3]
+  cd2 <- matrix(ncol = s, nrow = 0)
+  cdN <- matrix(ncol = d, nrow = 0)
+  dimnames(cdN_all) <- list(
+    S = paste0("S",1:s), feature = feature_names, i = 1:N)
+  cd <- cdN_all %>% 
+    apply(MARGIN = c(1,2), FUN = function(x){ 
+      c(mean(x), quantile(x, probs = p)) 
+    })
+  for (i in 1:d) {cd2 <- rbind(cd2, cd[,,i])}
+  for (i in 1:N) {cdN <- rbind(cdN, cdN_all[,,i])}
+  cdN <- cdN %>% 
+    data.frame() %>%
+    cbind(i = rep(1:N,each=s), S = paste0("S",1:s), .)
+  
+  cd2 <- cd2 %>% 
+    data.frame() %>% 
+    cbind(feature = rep(feature_names,each=3), CI = 1:3) %>% 
+    pivot_longer(all_of(paste0("S",1:s)), names_to = "S")
+  
+  cd2 <- cd2 %>% mutate(type=recode(S, S1="ADL", S3="ADP", S5="ADR")) %>% 
+    mutate(facet=recode(S, S1="F1", S3="F1", S5="F2")) %>%
+    select(-S)
+  cd3 <- cd2 %>% 
+    filter(type %in% c("ADL","ADP") & CI == 1) %>% 
+    pivot_wider(names_from = type, values_from = value)
+  cdCI <- cd2 %>% 
+    filter(type %in% c("ADL","ADP","ADR")) %>% 
+    pivot_wider(names_from = CI, values_from = value, names_prefix = "CI")
+  cdN2ADLP <- cdN %>% 
+    mutate(type=recode(S, S1="ADL", S3="ADP", S5="ADR")) %>% 
+    mutate(facet=recode(S, S1="F1", S3="F1", S5="F2")) %>%
+    select(-S) %>% 
+    filter(type %in% c("ADL","ADP","ADR")) %>% 
+    pivot_longer(all_of(feature_names), names_to="feature")
+  
+  # The flossy dumbbell plot
+  ggplot(data=cdN2ADLP) +
+    geom_segment(data=cd3, aes(x=feature, 
+                               xend=feature, 
+                               y=ADL, 
+                               yend=ADP), color="grey75", size=2) +
+    geom_segment(data=filter(cdCI,type=="ADR"), 
+                 aes(x=feature, 
+                     xend=feature, 
+                     yend=CI1, 
+                     y=0), color="indianred4", size=2) +
+    theme_set(theme_minimal()) +
+    xlab("") +
+    theme(strip.text.y = element_blank()) +
+    theme(strip.text.x = element_blank()) +
+    facet_grid(facet~.) +
+    ylab("Shapley value") +
+    scale_x_discrete(labels=leg_labs) +
+    scale_fill_manual(values = colpal ) +
+    scale_colour_manual(values = colpal) +
+    geom_crossbar(data=cdCI, fatten=1, alpha=0.3, width=0.3,linetype=0,
+                  aes(y=CI1, ymin=CI2, ymax=CI3, x=feature,
+                      colour=type, fill=type)) +
+    geom_hline(data=data.frame(facet="F2"),
+               aes(yintercept=0), colour="grey",linetype=1) +
+    geom_jitter(alpha=0.4,width=0.14,size=1,
+                aes(x=feature,y=value,colour=type,shape=type)) +
+    geom_point(data=cdCI, aes(x=feature, y=CI1, shape=type),  size=1)
+}
+
+
+plot_compare_DARRP_N_interact_ADR <- function(
+  cdN_all, p = c(0.025,0.975),
+  d = dim(cdN_all)[2],
+  feature_names = paste0("X",1:d),
+  y_name = "Shapley value",
+  leg_labs = unname(TeX(paste0("$X_",1:d)))) {
+  
+  # p = c(0.025,0.975)
+  # d = dim(cdN_all)[2]
+  # feature_names = paste0("X",1:d)
+  # y_name = "Shapley value"
+  # leg_labs = unname(TeX(paste0("$X_",1:d)))
+  
+  s <- dim(cdN_all)[1]
+  N <- dim(cdN_all)[3]
+  cd2 <- matrix(ncol = s, nrow = 0)
+  cdN <- matrix(ncol = d, nrow = 0)
+  dimnames(cdN_all) <- list(
+    S = paste0("S",1:s), feature = feature_names, i = 1:N)
+  cd <- cdN_all %>% 
+    apply(MARGIN = c(1,2), FUN = function(x){ 
+      c(mean(x), quantile(x, probs = p)) 
+    })
+  for (i in 1:d) {cd2 <- rbind(cd2, cd[,,i])}
+  for (i in 1:N) {cdN <- rbind(cdN, cdN_all[,,i])}
+  cdN <- cdN %>% 
+    data.frame() %>%
+    cbind(i = rep(1:N,each=s), S = paste0("S",1:s), .)
+  
+  cd2 <- cd2 %>% 
+    data.frame() %>% 
+    cbind(feature = rep(feature_names,each=3), CI = 1:3) %>% 
+    pivot_longer(all_of(paste0("S",1:s)), names_to = "S")
+  
+  cd2 <- cd2 %>% mutate(type=recode(S, S5 = "ADR")) %>% 
+    select(-S)
+  cd3 <- cd2 %>% 
+    filter(type == "ADR") %>% 
+    pivot_wider(names_from = CI, values_from = value, names_prefix = "CI")
+  cdN2 <- cdN %>% 
+    mutate(type=recode(S, S5="ADR")) %>% 
+    select(-S) %>% 
+    filter(type == "ADR") %>% 
+    pivot_longer(all_of(feature_names), names_to="feature")
+  
+  ggplot(cd3, aes(x=feature, y=CI1)) +
+    geom_segment(aes(x=feature, 
+                     xend=feature, 
+                     yend=CI1, 
+                     y=0), color="indianred4", size=2) +
+    geom_crossbar(fatten=1, alpha=0.3, width=0.3,linetype=0,
+                  aes(y=CI1, ymin=CI2, ymax=CI3, x=feature,
+                      colour=type, fill=type)) +
+    theme_minimal() +
+    xlab("") +
+    ylab("Shapley value") +
+    geom_hline(aes(yintercept=0), colour="grey",linetype=1) +
+    scale_x_discrete(labels=leg_labs) +
+    geom_point(size=3,colour="indianred") +
+    geom_jitter(data=cdN2,alpha=0.4,width=0.14,shape=18,
+                aes(x=feature,y=value,colour=type))
+}
+
+plot_compare_DARRP_N_interact_ADL_ADP <- function(
+  cdN_all, p = c(0.025,0.975),
+  d = dim(cdN_all)[2],
+  feature_names = paste0("X",1:d),
+  y_name = "Shapley value",
+  leg_labs = unname(TeX(paste0("$X_",1:d)))) {
+  
+  s <- dim(cdN_all)[1]
+  d <- dim(cdN_all)[2]
+  N <- dim(cdN_all)[3]
+  cd2 <- matrix(ncol = s, nrow = 0)
+  cdN <- matrix(ncol = d, nrow = 0)
+  dimnames(cdN_all) <- list(
+    S = paste0("S",1:s), feature = feature_names, i = 1:N)
+  cd <- cdN_all %>% 
+    apply(MARGIN = c(1,2), FUN = function(x){ 
+      c(mean(x), quantile(x, probs = p)) 
+    })
+  for (i in 1:d) {cd2 <- rbind(cd2, cd[,,i])}
+  for (i in 1:N) {cdN <- rbind(cdN, cdN_all[,,i])}
+  cdN <- cdN %>% 
+    data.frame() %>%
+    cbind(i = rep(1:N,each=s), S = paste0("S",1:s), .)
+  
+  cd2 <- cd2 %>% 
+    data.frame() %>% 
+    cbind(feature = rep(feature_names,each=3), CI = 1:3) %>% 
+    pivot_longer(all_of(paste0("S",1:s)), names_to = "S")
+  
+  cd2 <- cd2 %>% mutate(type=recode(S, S1="ADL", S3="ADP")) %>% 
+    select(-S)
+  cd3 <- cd2 %>% 
+    filter(type %in% c("ADL","ADP") & CI == 1) %>% 
+    pivot_wider(names_from = type, values_from = value)
+  cdCI <- cd2 %>% 
+    filter(type %in% c("ADL","ADP")) %>% 
+    pivot_wider(names_from = CI, values_from = value, names_prefix = "CI")
+  cdN2 <- cdN %>% 
+    mutate(type=recode(S, S1="ADL", S3="ADP")) %>% 
+    select(-S) %>% 
+    filter(type %in% c("ADL","ADP")) %>% 
+    pivot_longer(all_of(feature_names), names_to="feature")
+  
+  # The flossy dumbbell plot
+  ggplot(cd3) +
+    geom_segment( aes(x=feature, 
+                      xend=feature, 
+                      y=ADL, 
+                      yend=ADP), color="grey75", size=2) +
+    geom_point( aes(x=feature, y=ADL),  size=3 ) + #color=rgb(0.2,0.7,0.1,0.8),
+    geom_point( aes(x=feature, y=ADP),  size=3 ) + #color=rgb(0.7,0.2,0.1,0.8),
+    theme_set(theme_minimal())  +
+    xlab("") +
+    ylab("Shapley value") +
+    scale_x_discrete(labels=leg_labs) +
+    geom_crossbar(data=cdCI, fatten=1, alpha=0.3, width=0.3,linetype=0,
+                  aes(y=CI1, ymin=CI2, ymax=CI3, x=feature,
+                      colour=type, fill=type)) +
+    geom_jitter(data=cdN2,alpha=0.4,width=0.14,shape=18,
+                aes(x=feature,y=value,colour=type))
+}
+
 plot_compare_DARRP_N_drift <- function(
   cdN_all, p = c(0.025,0.975),
   d = dim(cdN_all)[2],

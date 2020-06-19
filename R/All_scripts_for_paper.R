@@ -68,97 +68,43 @@ dat <- cbind(y,X,X4,X5)
 sdat <- split_dat(dat, df = T)
 lmodel <- lm(y ~ x1 + x2 + x3 + x4 + x5, dat = sdat$df_yx_train)
 lmodelt <- basic_lmodel_test(lmodel, sdat)
-cdN <- compare_DARRP_N(sdat, lmodelt, features = 1:5, 
-                       feature_names = paste0("x",1:5),
-                       sample_size = 1000, N = 100,
-                       valid = F, all_labs = F)
+#cdN <- compare_DARRP_N(sdat, lmodelt, features = 1:5, 
+#                       feature_names = paste0("x",1:5),
+#                       sample_size = 1000, N = 100,
+#                       valid = F, all_labs = F)
 #saveRDS(cdN, "run1_cdN_linear1.Rds")
 cdN <- readRDS("results/run1_cdN_linear1.Rds")
 plot_compare_DARRP_N(cdN, main = "test run", all_labs = F)
 lmodel2 <- lm(y ~ x1 + x2 + x3 + x4 + x5 + x3:x4:x5, dat = sdat$df_yx_train)
 lmodel2t <- basic_lmodel_test(lmodel2, sdat)
-cdN2 <- compare_DARRP_N(sdat, lmodel2t, features = 1:5, 
-                       feature_names = paste0("x",1:5),
-                       sample_size = 1000, N = 100,
-                       valid = F, all_labs = F)
+#cdN2 <- compare_DARRP_N(sdat, lmodel2t, features = 1:5, 
+#                       feature_names = paste0("x",1:5),
+#                       sample_size = 1000, N = 100,
+#                       valid = F, all_labs = F)
 #saveRDS(cdN2, "run1_cdN_linear2.Rds")
-plot_compare_DARRP_N(cdN2, main = "test run", all_labs = F)
-
-plot_compare_DARRP_N_interact <- function(
-  cdN_all, p = c(0.025,0.975),
-  d = dim(cdN_all)[2],
-  feature_names = paste0("X",1:d),
-  y_name = "Shapley value",
-  leg_labs = unname(TeX(paste0("$X_",1:d)))) {
-  
-  s <- dim(cdN_all)[1]
-  d <- dim(cdN_all)[2]
-  N <- dim(cdN_all)[3]
-  cd2 <- matrix(ncol = s, nrow = 0)
-  cdN <- matrix(ncol = d, nrow = 0)
-  dimnames(cdN_all) <- list(
-      S = paste0("S",1:s), feature = feature_names, i = 1:N)
-  cd <- cdN_all %>% 
-    apply(MARGIN = c(1,2), FUN = function(x){ 
-        c(mean(x), quantile(x, probs = p)) 
-    })
-  for (i in 1:d) {cd2 <- rbind(cd2, cd[,,i])}
-  for (i in 1:N) {cdN <- rbind(cdN, cdN_all[,,i])}
-  cdN <- cdN %>% 
-    data.frame() %>%
-    cbind(i = rep(1:N,each=s), S = paste0("S",1:s), .)
-    
-  cd2 <- cd2 %>% 
-    data.frame() %>% 
-    cbind(feature = rep(feature_names,each=3), CI = 1:3) %>% 
-    pivot_longer(all_of(paste0("S",1:s)), names_to = "S")
-  
-  cd2 <- cd2 %>% mutate(type=recode(S, S1="ADL", S3="ADP")) %>% 
-    select(-S)
-  cd3 <- cd2 %>% 
-    filter(type %in% c("ADL","ADP") & CI == 1) %>% 
-    pivot_wider(names_from = type, values_from = value)
-  cdCI <- cd2 %>% 
-    filter(type %in% c("ADL","ADP")) %>% 
-    pivot_wider(names_from = CI, values_from = value, names_prefix = "CI")
-  cdN2 <- cdN %>% 
-    mutate(type=recode(S, S1="ADL", S3="ADP")) %>% 
-    select(-S) %>% 
-    filter(type %in% c("ADL","ADP")) %>% 
-    pivot_longer(all_of(feature_names), names_to="feature")
-  
-  # Cleveland dotplot for ADL and ADP: Just on test set.
-  ggplot(cd3) +
-    geom_segment( aes(x=feature, 
-                      xend=feature, 
-                      y=ADL, 
-                      yend=ADP), color="grey75", size=2) +
-    geom_point( aes(x=feature, y=ADL),  size=3 ) + #color=rgb(0.2,0.7,0.1,0.8),
-    geom_point( aes(x=feature, y=ADP),  size=3 ) + #color=rgb(0.7,0.2,0.1,0.8),
-    xlab("") +
-    theme_set(theme_minimal())  +
-    ylab("Shapley value") +
-    scale_x_discrete(labels=leg_labs) +
-    geom_crossbar(data=cdCI, fatten=1, alpha=0.3, width=0.3,linetype=0,
-                  aes(y=CI1, ymin=CI2, ymax=CI3, x=feature,
-                      colour=type, fill=type)) +
-    geom_jitter(data=cdN2,alpha=0.4,width=0.14,shape=18,
-                aes(x=feature,y=value,colour=type))
-}
+colpal <- c("#CC79A7", "#0072B2", "#D55E00")
+cdN2 <- readRDS("results/run1_cdN_linear2.Rds")
 pdf(file="DARRP_interact.pdf",width=5,height=4)
-plot_compare_DARRP_N_interact(cdN_all)
+plot_compare_DARRP_N_interact_ADL_ADP(cdN)
+dev.off()
+pdf(file="DARRP_interact2.pdf",width=5,height=4)
+plot_compare_DARRP_N_interact_ADL_ADP(cdN2)
+dev.off()
+pdf(file="DARRP_interact_all.pdf",width=5,height=4)
+plot_compare_DARRP_N_interact_all(cdN, colpal=colpal)
+dev.off()
+pdf(file="DARRP_interact_all2.pdf",width=5,height=4)
+plot_compare_DARRP_N_interact_all(cdN2, colpal=colpal)
 dev.off()
 
-# Library
-library(fmsb)
-# Create data: note in High school for Jonathan:
-data <- as.data.frame(matrix( sample( 2:20 , 10 , replace=T) , ncol=10))
-colnames(data) <- c("math" , "english" , "biology" , "music" , "R-coding", "data-viz" , "french" , "physic", "statistic", "sport" )
-# To use the fmsb package, I have to add 2 lines to the dataframe: the max and min of each topic to show on the plot!
-data <- rbind(rep(20,10) , rep(0,10) , data)
-# Check your data, it has to look like this!
-# head(data)
-# The default radar chart 
+
+
+
+
+
+
+
+
 
 
 
