@@ -7,6 +7,9 @@ from sklearn.metrics import accuracy_score
 import numpy
 import matplotlib.pyplot as plt
 import shapley as shapley
+import shap
+X,y = shap.datasets.nhanesi()
+
 
 import shap
 

@@ -429,20 +429,9 @@ plot_compare_DARRP_N_interact_all <- function(
                aes(yintercept=0), colour="grey",linetype=1)
 }
 
-sum(sdat4way$x_test[,"sex_isFemale"] == 1)
-sum(sdat4way$x_test[,"sex_isFemale"] == 0)
-sum(sdat4way$x_males[,"sex_isFemale"] == 1)
-sum(sdat4way$x_males[,"sex_isFemale"] == 0)
-sum(sdat4way$x_females[,"sex_isFemale"] == 1)
-sum(sdat4way$x_females[,"sex_isFemale"] == 0)
-
-
 compare_DARRRP_N_gender_4way <- function(
-  dat, sample_size = 1000, 
+  sdat4way, xgb, sample_size = 1000, 
   N = 100, features, feature_names) {
-  
-  sdat4way <- split_dat_gender_4way(dat)
-  xgb <- basic_xgb_fit(sdat4way)
   xgbt <- basic_xgb_test2(xgb, sdat4way)
   cdN <- compare_DARRP_N2(sdat4way, xgbt, features = features, 
                           feature_names = feature_names,
@@ -450,9 +439,9 @@ compare_DARRRP_N_gender_4way <- function(
   return(list(cdN = cdN, xgb = xgb, xgbt = xgbt))
 }
 
-split_dat_gender_4way <- function(dat) {
+split_dat_gender_4way <- function(dat, gender = "sex_isFemale", gender_M = F) {
   n <- nrow(dat)
-  male_index <- which(dat[["sex_isFemale"]] == F)
+  male_index <- which(dat[[gender]] == gender_M)
   nm <- length(male_index)
   X_m <- dat[male_index,-1]
   X_f <- dat[-male_index,-1]
@@ -922,6 +911,22 @@ basic_xgb <- function(sdat, plots = F, obj = "reg:squarederror") {
               residuals_train = residuals_train))
 }
 
+### This uses hyperparameters taken from 
+# https://slundberg.github.io/shap/notebooks/NHANES%20I%20Survival%20Model.html
+nhanes_xgb_fit <- function(dat, nround=20, verbose=T) {
+  params <- list(
+    eta = 0.002,
+    max_depth = 3,
+    objective = "survival:cox",
+    subsample = 0.5)
+  bst <- xgboost(
+    params = params,
+    data = dat$x_train,
+    label = dat$y_train,
+    nround = nround,
+    verbose = verbose
+  )
+}
 
 basic_xgb_fit <- function(dat, obj = "reg:squarederror") {
   binary <- T

@@ -1,8 +1,3 @@
-README.md
-setup.py
-hsic/__init__.py
-hsic/calc_hsic.py
-hsic_strumke_fryer.egg-info/PKG-INFO
-hsic_strumke_fryer.egg-info/SOURCES.txt
-hsic_strumke_fryer.egg-info/dependency_links.txt
-hsic_strumke_fryer.egg-info/top_level.txt
+version https://git-lfs.github.com/spec/v1
+oid sha256:27499151b216e3dc21ec717b1c79a98beba073b419d57de47fb99bdc3108883c
+size 228

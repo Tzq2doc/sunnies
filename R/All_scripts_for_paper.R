@@ -104,6 +104,33 @@ dev.off()
 
 ### Application 1 -----------------------------------------------------------
 # The NHANES I dataset from [14]
+library(reticulate)
+use_python("C:/Users/Doony/.julia/conda/3/python.exe")
+shap <- import("shap")
+nhanes <- shap$datasets$nhanesi()
+X <- nhanes[[1]]
+y <- nhanes[[2]]
+# Missing variable summary suggest we drop sedimentation rate and white blood cells
+(missv <- miss_var_summary(X))
+high_miss <- missv[1:2,][[1]]
+X2 <- select(X, -one_of(high_miss))
+# Remove remaining 59 observations with NAs:
+X_sh <- remove_all_missing(X2, ncols = 0)
+y_sh <- y[attr(X_sh, "keep")]
+X_sh$Sex <- X_sh$Sex - 1 # 0 is male, 1 is female
+dat <- cbind(y_sh, X_sh[,-1])
+interesting <- c("Serum Cholesterol", "BMI", "Systolic BP") #, )
+fts <- which(colnames(dat) %in% interesting) - 1
+fnams <- c("chol", "BMI", "SBP")
+sdat4way <- split_dat_gender_4way(dat, gender="Sex", gender_M=0)
+xgb <- nhanes_xgb_fit(sdat4way, nround=5000)
+cdN4way_sh <- compare_DARRRP_N_gender_4way(
+  sdat4way, xgb, sample_size = 1000, N = 100,
+  features = fts, feature_names = fnams)
+saveRDS(cdN4way_sh, file="cdN4way_sh.Rds")
+#dimnames(cdN4way_sh$cdN) <- list(S = paste0("S",1:9), feature = fnams, i = 1:100)
+plot_compare_DARRP_N_4way(cdN4way_sh$cdN)
+
 Xh <- read.csv("../RL_data/X_data_with_header.csv")
 y <- read.csv("../RL_data/y_data.csv", header = F)
 names(y) <- "logRR"
@@ -116,13 +143,32 @@ X_dr <- remove_all_missing(Xh2, ncols = 3)
 y_dr <- y[attr(X_dr, "keep"),]
 dat <- cbind(y_dr, X_dr)
 interesting <- c("age", "physical_activity", "systolic_blood_pressure")
+interesting2 <- c("cholesterol", "bmi", "systolic_blood_pressure")
+interesting3 <- c("cholesterol", "bmi", "physical_activity", "systolic_blood_pressure", "age")
 fts <- which(colnames(dat) %in% interesting) - 1
+fts2 <- which(colnames(dat) %in% interesting2) - 1
+fts3 <- which(colnames(dat) %in% interesting3) - 1
 fnams <- c("age", "PA", "SBP")
+fnams2 <- c("cholesterol", "BMI", "SBP")
+fnams3 <- c("chol", "BMI", "PA", "SBP", "age")
+sdat4way <- split_dat_gender_4way(dat)
+xgb <- nhanes_xgb_fit(sdat4way, nround=5000)
 # cdN4way <- compare_DARRRP_N_gender_4way(
-#   dat, sample_size = 1000, N = 100,
+#   sdat4way, xgb, sample_size = 1000, N = 100,
 #   features = fts, feature_names = fnams)
 # saveRDS(cdN4way, "run1_cdN4way.Rds")
+# saveRDS(xgb, "run1_cdN4way_xgb.Rds")
+# cdN4way2 <- compare_DARRRP_N_gender_4way(
+#   sdat4way, xgb, sample_size = 1000, N = 100,
+#   features = fts2, feature_names = fnams2)
+#saveRDS(cdN4way3, "run1_cdN4way2.Rds")
+cdN4way3 <- compare_DARRRP_N_gender_4way(
+  sdat4way, xgb, sample_size = 1000, N = 100,
+  features = fts3, feature_names = fnams3)
+saveRDS(cdN4way3, "run1_cdN4way3.Rds")
 cdN4way <- readRDS("results/run1_cdN4way.Rds")
+# cdN4way <- readRDS("results/run1_cdN4way2.Rds")
+# cdN4way <- readRDS("results/run1_cdN4way3.Rds")
 pdf(file="DARRP_4way.pdf",width=5,height=4)
 plot_compare_DARRP_N_4way(cdN4way$cdN)
 dev.off()
