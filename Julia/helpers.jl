@@ -1,6 +1,7 @@
 using Statistics
 using Distributions
 using Distances
+using LinearAlgebra
 
 
 # evaluate(Euclidean(), x, y) == sqrt(sum([z^2 for z in (x-y)])) 
@@ -9,31 +10,26 @@ function distance_matrix(x, y)
     return pairwise(Euclidean(), x, y, dims=1)
 end
 
-function dcov(x, y)
-    n = size(x)[1] # number of observations 
-    #TODO: check that n_obs in x and y are the same?
-
-    A = calc_mat(x, n)
-    #B = calc_mat(y)
-    #return 1/n/n * sum(A*B)
+function calc_mat(x)
+    D = distance_matrix(x, x)
+    return (D .- mean(D, dims=1) .- mean(D, dims=2) .- mean(D))
 end
 
-function calc_mat(x, n)
-    D = distance_matrix(x, x)
-    println(D)
-    println(1/n * (sum(D, dims=1) - transpose(sum(D, dims=2))))
+function dcov(x, y)
 
+    A = calc_mat(x)
+    B = calc_mat(y)
+    return (norm((A .* B)))
 end
 
 
 # TESTING 
-x = rand(Uniform(0,1), 10, 3)
-y = rand(Uniform(0,1), 10, 1)
-#println(cov(x, y))
-#println(cov(x))
-#println(cov(y))
-#println(var(x))
-dcov(x, y)
+x = rand(Uniform(0,1), 3, 3)
+y = rand(Uniform(0,1), 3, 3)
+println(x)
+println(y)
+
+println(dcov(x, y))
 
 function twodim(x)
     if ndims(x) == 1
