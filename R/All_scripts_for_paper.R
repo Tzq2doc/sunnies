@@ -11,6 +11,7 @@ library(ggplot2)
 library(latex2exp)
 library(reticulate)
 library(reshape2)
+library(naniar)
 
 ### ERDA Example 1 -----------------------------------------------------------
 # The repetitions producing violin plots is in python, but here is similar:
@@ -97,22 +98,8 @@ pdf(file="DARRP_interact_all2.pdf",width=5,height=4)
 plot_compare_DARRP_N_interact_all(cdN2, colpal=colpal)
 dev.off()
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ### DARRP EXAMPLE 3 -----------------------------------------------------------
-# This will be simpson's paradox (if we include it).
+# This will be for simpson's paradox (if we include it later).
 
 
 ### Application 1 -----------------------------------------------------------
@@ -122,22 +109,23 @@ y <- read.csv("../RL_data/y_data.csv", header = F)
 names(y) <- "logRR"
 Xh <- apply(Xh, FUN = function(x){x[is.nan(x)] <- NA; x}, MARGIN = 2)
 Xh <- as_tibble(Xh)
+missv <- miss_var_summary(Xh)
+high_miss <- missv[1:15,][[1]]; high_miss
+Xh2 <- select(Xh, -one_of(high_miss))
 X_dr <- remove_all_missing(Xh2, ncols = 3)
 y_dr <- y[attr(X_dr, "keep"),]
 dat <- cbind(y_dr, X_dr)
 interesting <- c("age", "physical_activity", "systolic_blood_pressure")
 fts <- which(colnames(dat) %in% interesting) - 1
 fnams <- c("age", "PA", "SBP")
-cdN3way <- compare_DARRRP_N_gender_3way(
-  dat, sample_size = 1000, N = 100,
-  features = fts, feature_names = fnams)
-#save(cdN3way, file = "run1_cdN3way.dat")
-plot_compare_DARRP_N(cdN1000[[1]], main = "cdN3way")
-
-
-
-
-
+# cdN4way <- compare_DARRRP_N_gender_4way(
+#   dat, sample_size = 1000, N = 100,
+#   features = fts, feature_names = fnams)
+# saveRDS(cdN4way, "run1_cdN4way.Rds")
+cdN4way <- readRDS("results/run1_cdN4way.Rds")
+pdf(file="DARRP_4way.pdf",width=5,height=4)
+plot_compare_DARRP_N_4way(cdN4way$cdN)
+dev.off()
 
 # UNUSED SNIPS ------------------------------------------------------------
 

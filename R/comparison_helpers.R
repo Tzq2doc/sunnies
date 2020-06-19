@@ -96,6 +96,31 @@ split_dat_gender_3way <- function(dat) {
               x_valid = as.matrix(x_valid)))
 }
 
+# split_dat_gender_4way <- function(dat) {
+#   n <- nrow(dat)
+#   male_index <- which(dat[["sex_isFemale"]] == F)
+#   nm <- length(male_index)
+#   X_m <- dat[male_index,-1]
+#   X_f <- dat[-male_index,-1]
+#   y_m <- dat[male_index,1]
+#   y_f <- dat[-male_index,1]
+#   
+#   train_m <- sample(1:nrow(X_m), as.integer(nm/2))
+#   train_f <- sample(1:nrow(X_f), as.integer(nm/2))
+#   x_train <- rbind(X_m[train_m,], X_f[train_f,])
+#   x_test <- X_m[-train_m,]
+#   x_valid <- X_f[-train_f,]
+#   y_train <- c(y_m[train_m], y_f[train_f])
+#   y_test <- y_m[-train_m]
+#   y_valid <- y_f[-train_f]
+#   return(list(y_train = as.matrix(y_train), 
+#               y_test = as.matrix(y_test),
+#               y_valid = as.matrix(y_valid),
+#               x_train = as.matrix(x_train), 
+#               x_test = as.matrix(x_test),
+#               x_valid = as.matrix(x_valid)))
+# }
+
 # Calculates number of males n1m in the training set, 
 # and number of females n1f in the training set, 
 # where it is assumed that we do not want to discard anybody.
@@ -200,6 +225,47 @@ compare_DARRP <- function(sdat, modelt, features,
   return(s)
 }
 
+compare_DARRP2 <- function(sdat4way, modelt, features, 
+                          feature_names, 
+                          utility = DC,
+                          sample_size = 1e3) {
+  
+  samp_test <- 1:nrow(sdat4way$x_test)
+  samp_males <- 1:nrow(sdat4way$x_males)
+  samp_females <- 1:nrow(sdat4way$x_females)
+  if (!is.na(sample_size)) {
+    samp_test <- sample(samp_test, sample_size)
+    samp_males <- sample(samp_males, sample_size)
+    samp_females <- sample(samp_females, sample_size)
+  }
+  X1 <- sdat4way$x_test[samp_test,features,drop=F]
+  X2 <- sdat4way$x_males[samp_males,features,drop=F]
+  X3 <- sdat4way$x_females[samp_females,features,drop=F]
+  y1 <- as.matrix(sdat4way$y_test)[samp_test,,drop = F]
+  y2 <- as.matrix(sdat4way$y_males)[samp_males,,drop = F]
+  y3 <- as.matrix(sdat4way$y_females)[samp_females,,drop = F]
+  p1 <- as.matrix(modelt$pred_test)[samp_test,,drop = F]
+  p2 <- as.matrix(modelt$pred_males)[samp_males,,drop = F]
+  p3 <- as.matrix(modelt$pred_females)[samp_females,,drop = F]
+  r1 <- as.matrix(modelt$residuals_test)[samp_test,,drop = F]
+  r2 <- as.matrix(modelt$residuals_males)[samp_males,,drop = F]
+  r3 <- as.matrix(modelt$residuals_females)[samp_females,,drop = F]
+  
+  s1 <- shapley(y1, X1, utility = utility)
+  s2 <- shapley(y2, X2, utility = utility)
+  s3 <- shapley(y3, X3, utility = utility)
+  s4 <- shapley(p1, X1, utility = utility)
+  s5 <- shapley(p2, X2, utility = utility)
+  s6 <- shapley(p3, X3, utility = utility)
+  s7 <- shapley(r1, X1, utility = utility)
+  s8 <- shapley(r2, X2, utility = utility)
+  s9 <- shapley(r3, X3, utility = utility)
+  s <- rbind(s1,s2,s3,s4,s5,s6,s7,s8,s9)
+  colnames(s) <- feature_names
+  
+  return(s)
+}
+
 compare_DARRP_N <- function(sdat, modelt, features, 
                             feature_names, 
                             utility = DC,
@@ -216,6 +282,24 @@ compare_DARRP_N <- function(sdat, modelt, features,
     
   }
   dimnames(cd) <- list(NULL, feature_names, NULL)
+  return(cd)
+}
+
+compare_DARRP_N2 <- function(sdat4way, modelt, features, 
+                            feature_names, 
+                            utility = DC,
+                            sample_size = 1e3, 
+                            N = 100) {
+  d <- length(features)
+  cd <- array(dim = c(9, d, N))
+  for (i in 1:N) {
+    cdi <- compare_DARRP2(sdat4way, modelt, features, 
+                         feature_names, utility = DC,
+                         sample_size = sample_size)
+    cd[,,i] <- cdi
+    
+  }
+  dimnames(cd) <- list(S = paste0("S",1:9), feature = feature_names, i = 1:N)
   return(cd)
 }
 
@@ -332,16 +416,176 @@ plot_compare_DARRP_N_interact_all <- function(
     facet_grid(facet~.) +
     ylab("Shapley value") +
     scale_x_discrete(labels=leg_labs) +
-    scale_fill_manual(values = colpal ) +
-    scale_colour_manual(values = colpal) +
+    scale_fill_manual(values=colpal) +
+    scale_colour_manual(values=colpal) +
+    scale_shape_manual(values=c(15,16,17)) +
+    geom_jitter(alpha=0.4,width=0.14,size=0.75,
+                aes(x=feature,y=value,colour=type,shape=type)) +
+    geom_point(data=cdCI, aes(x=feature, y=CI1, shape=type),  size=1) +
     geom_crossbar(data=cdCI, fatten=1, alpha=0.3, width=0.3,linetype=0,
                   aes(y=CI1, ymin=CI2, ymax=CI3, x=feature,
                       colour=type, fill=type)) +
     geom_hline(data=data.frame(facet="F2"),
-               aes(yintercept=0), colour="grey",linetype=1) +
-    geom_jitter(alpha=0.4,width=0.14,size=1,
+               aes(yintercept=0), colour="grey",linetype=1)
+}
+
+sum(sdat4way$x_test[,"sex_isFemale"] == 1)
+sum(sdat4way$x_test[,"sex_isFemale"] == 0)
+sum(sdat4way$x_males[,"sex_isFemale"] == 1)
+sum(sdat4way$x_males[,"sex_isFemale"] == 0)
+sum(sdat4way$x_females[,"sex_isFemale"] == 1)
+sum(sdat4way$x_females[,"sex_isFemale"] == 0)
+
+
+compare_DARRRP_N_gender_4way <- function(
+  dat, sample_size = 1000, 
+  N = 100, features, feature_names) {
+  
+  sdat4way <- split_dat_gender_4way(dat)
+  xgb <- basic_xgb_fit(sdat4way)
+  xgbt <- basic_xgb_test2(xgb, sdat4way)
+  cdN <- compare_DARRP_N2(sdat4way, xgbt, features = features, 
+                          feature_names = feature_names,
+                          sample_size = sample_size, N = N)
+  return(list(cdN = cdN, xgb = xgb, xgbt = xgbt))
+}
+
+split_dat_gender_4way <- function(dat) {
+  n <- nrow(dat)
+  male_index <- which(dat[["sex_isFemale"]] == F)
+  nm <- length(male_index)
+  X_m <- dat[male_index,-1]
+  X_f <- dat[-male_index,-1]
+  y_m <- dat[male_index,1]
+  y_f <- dat[-male_index,1]
+  train_m <- sample(1:nrow(X_m), as.integer(nm/2))
+  train_f <- sample(1:nrow(X_f), as.integer(nm/2))
+  x_train <- rbind(X_m[train_m,], X_f[train_f,])
+  y_train <- c(y_m[train_m], y_f[train_f])
+  x_males <- X_m[-train_m,]
+  y_males <- y_m[-train_m]
+  x_females <- X_f[-train_f,]
+  y_females <- y_f[-train_f]
+  nmt <- nrow(x_males)
+  nft <- nrow(x_females)
+  test_f <- sample(1:nft, nmt)
+  x_test <- rbind(x_males, x_females[test_f,])
+  y_test <- c(y_males, y_females[test_f])
+  
+  return(list(y_train = as.matrix(y_train), 
+              y_test = as.matrix(y_test),
+              y_males = as.matrix(y_males),
+              y_females = as.matrix(y_females),
+              x_train = as.matrix(x_train), 
+              x_test = as.matrix(x_test),
+              x_males = as.matrix(x_males),
+              x_females = as.matrix(x_females)))
+}
+
+plot_compare_DARRP_N_4way <- function(
+  cdN_all, p = c(0.025,0.975),
+  d = dim(cdN_all)[2],
+  y_name = "Shapley value",
+  colpal=c("#CC79A7", "#0072B2", "#D55E00")) {
+  
+  p = c(0.025,0.975)
+  d = dim(cdN_all)[2]
+  y_name = "Shapley value"
+  colpal=c("#CC79A7", "#0072B2", "#D55E00")
+  
+  s <- dim(cdN_all)[1]
+  d <- dim(cdN_all)[2]
+  N <- dim(cdN_all)[3]
+  cd2 <- matrix(ncol=s, nrow=0)
+  cdN <- matrix(ncol=d, nrow=0)
+  S <- dimnames(cdN_all)[[1]]
+  feature_names <- dimnames(cdN_all)[[2]]
+  i <- dimnames(cdN_all)[[3]]
+  cd <- cdN_all %>% 
+    apply(MARGIN = c(1,2), FUN = function(x){ 
+      c(mean(x), quantile(x, probs=p)) 
+    })
+  for (i in 1:d) {cd2 <- rbind(cd2, cd[,,i])}
+  for (i in 1:N) {cdN <- rbind(cdN, cdN_all[,,i])}
+  cdN <- cdN %>% 
+    data.frame() %>%
+    cbind(i = rep(1:N,each=s), S=paste0("S",1:s), .)
+  
+  cd2 <- cd2 %>% 
+    data.frame() %>% 
+    cbind(feature = rep(feature_names,each=3), CI=1:3) %>% 
+    pivot_longer(all_of(paste0("S",1:s)), names_to="S")
+  
+  cd2 <- cd2 %>% 
+    mutate(type=recode(S, 
+                       S1="ADL", S2="ADL", S3="ADL",
+                       S4="ADP", S5="ADP", S6="ADP",
+                       S7="ADR", S8="ADR", S9="ADR")) %>% 
+    select(-S) %>% 
+    mutate(facet=recode(type, ADL="F1", ADP="F1", ADR="F2"))
+  sets <- c("balanced","all male","all female")
+  cd2$set <- factor(rep(sets, nrow(cd2)/3), levels=sets)
+  
+  cdN <- cdN %>% 
+    mutate(type=recode(S, 
+                       S1="ADL", S2="ADL", S3="ADL",
+                       S4="ADP", S5="ADP", S6="ADP",
+                       S7="ADR", S8="ADR", S9="ADR")) %>% 
+    select(-S) %>% 
+    mutate(facet=recode(type, ADL="F1", ADP="F1", ADR="F2"))
+  cdN$set <- factor(rep(sets, nrow(cdN)/3), levels=sets)
+  
+  cd3 <- cd2 %>% 
+    filter(type %in% c("ADL","ADP") & CI == 1) %>% 
+    pivot_wider(names_from=type, values_from=value)
+  cdCI <- cd2 %>% 
+    filter(type %in% c("ADL","ADP","ADR")) %>% 
+    pivot_wider(names_from=CI, values_from=value, names_prefix = "CI")
+  cdN2 <- cdN %>% 
+    filter(type %in% c("ADL","ADP","ADR")) %>% 
+    pivot_longer(all_of(feature_names), names_to="feature")
+  
+  ggplot(data=cdN2) +
+    geom_segment(data=cd3, aes(x=feature, 
+                               xend=feature, 
+                               y=ADL, 
+                               yend=ADP), color="grey75", size=2) +
+    geom_segment(data=filter(cdCI,type=="ADR"), 
+                 aes(x=feature, 
+                     xend=feature, 
+                     yend=CI1, 
+                     y=0), color="indianred4", size=2) +
+    theme_set(theme_minimal()) +
+    xlab("") +
+    facet_grid(facet~set) +
+    ylab("Shapley value") +
+    scale_fill_manual(values=colpal) +
+    scale_colour_manual(values=colpal) +
+    scale_shape_manual(values=c(15,16,17)) +
+    geom_jitter(alpha=0.4,width=0.14,size=0.75,
                 aes(x=feature,y=value,colour=type,shape=type)) +
-    geom_point(data=cdCI, aes(x=feature, y=CI1, shape=type),  size=1)
+    theme(strip.text.y = element_blank()) +
+    geom_point(data=cdCI, aes(x=feature, y=CI1, shape=type),  size=1) +
+    geom_crossbar(data=cdCI, fatten=1, alpha=0.3, width=0.3,linetype=0,
+                  aes(y=CI1, ymin=CI2, ymax=CI3, x=feature,
+                      colour=type, fill=type)) +
+    geom_hline(data=data.frame(facet="F2"),
+               aes(yintercept=0), colour="grey",linetype=1)
+}
+
+basic_xgb_test2 <- function(bst, sdat4way) {
+  pred_test <- predict(bst, sdat4way$x_test)
+  pred_males <- predict(bst, sdat4way$x_males)
+  pred_females <- predict(bst, sdat4way$x_females)
+  residuals_test <- sdat4way$y_test - pred_test
+  residuals_males <- sdat4way$y_males - pred_males
+  residuals_females <- sdat4way$y_females - pred_females
+  return(list(pred_test = pred_test,
+              pred_males = pred_males,
+              pred_females = pred_females,
+              residuals_test = residuals_test,
+              residuals_males = residuals_males,
+              residuals_females = residuals_females))
 }
 
 
