@@ -13,11 +13,47 @@ library(reticulate)
 library(reshape2)
 library(naniar)
 
-### ERDA Example 1 -----------------------------------------------------------
+### R2 LINEAR EXAMPLE -------------------------------------------------------
+
+n <- 1e4
+dat <- dat_unif_squared(n = n) %>% 
+  data.frame()
+N <- 100
+k <- 1000
+coeffs <- matrix(NA, nrow = N, ncol = 2)
+R2 <- vector(mode = "numeric", length = N)
+for (i in 1:N) {
+  s <- sample(1:n, k)
+  model <- dat[s,] %>% 
+    data.frame() %>% 
+    lm(y ~ x1+x2+x3+x4, data = .) %>% 
+    summary()
+  R2[i] <- model$r.sq
+  coeffs[i,] <- model$coefficients[c(1,5),1]
+}
+coeffs <- data.frame(coeffs)
+names(coeffs) <- c("intercept", "slope")
+mean_coeffs <- as.data.frame(t(apply(coeffs, MARGIN = 2, FUN = mean)))
+pdf(file="R2_plot.pdf", width=5, height=4)
+ggplot(dat) +
+  geom_point(aes(y=y,x=x4), alpha = 0.05, shape = 8) +
+  theme_minimal() +
+  geom_abline(data=coeffs, aes(slope=slope, intercept=intercept), alpha=0.05,
+              colour="darkred", size=2) +
+  xlab(TeX("$X_4")) +
+  geom_abline(data = mean_coeffs, 
+              aes(slope=slope, intercept=intercept),
+              alpha=0.5, colour="indianred", size=0.5)
+dev.off()
+quantile(R2, probs = c(0.025, 0.975))
+mean(R2)
+
+
+### LDA Example 1 -----------------------------------------------------------
 # The repetitions producing violin plots is in python, but here is similar:
 result1 <- run_evaluations(dat_unif_squared, utility = DC, n = 1e3, plots = T)
 
-### ERDA Examples 2 and 3  ----------------------------------------------------
+### LDA Examples 2 and 3  ----------------------------------------------------
 # (which should be the same example)
 # This example should be done exactly by hand, but here is a simulation.
 # When it is calculated exactly, the shapley values will be equal to each other:
@@ -170,7 +206,7 @@ cdN4way <- readRDS("results/run1_cdN4way.Rds")
 # cdN4way <- readRDS("results/run1_cdN4way2.Rds")
 # cdN4way <- readRDS("results/run1_cdN4way3.Rds")
 pdf(file="DARRP_4way.pdf",width=5,height=4)
-plot_compare_DARRP_N_4way(cdN4way$cdN)
+plot_compare_DARRP_N_4way(cdN4way3$cdN)
 dev.off()
 
 # UNUSED SNIPS ------------------------------------------------------------
