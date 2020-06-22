@@ -4,7 +4,7 @@ using Distances
 using LinearAlgebra
 
 
-# evaluate(Euclidean(), x, y) == sqrt(sum([z^2 for z in (x-y)])) 
+# evaluate(Euclidean(), x, y) == sqrt(sum([z^2 for z in (x-y)]))
 
 function distance_matrix(x, y)
     return pairwise(Euclidean(), x, y, dims=1)
@@ -16,17 +16,22 @@ function calc_mat(x)
 end
 
 function dcov(x, y)
+    return sqrt(dcov_sq(x, y))
+
+end
+
+function dcov_sq(x, y)
     A = calc_mat(x)
     B = calc_mat(y)
     #return norm(A .* B) # Wrong, don't know why
-    return sqrt(mean(A .* B))
+    return mean(A .* B)
 end
 
 function dcor(x, y)
-    return (dcov(x, y)) / (sqrt(dcov(x, x) * dcov(y, y)))
+    return sqrt(dcov_sq(x, y) / (dcov_sq(x, x) * dcov_sq(y, y)) )
 end
 
-# === TESTING 
+# === TESTING
 #x = rand(Uniform(0,1), 3, 3)
 #y = rand(Uniform(0,1), 3, 3)
 
@@ -48,7 +53,7 @@ function twodim(x)
     if ndims(x) == 1
         return reshape(x, (length(x), 1))
     end
-    return x 
+    return x
 end
 
 
@@ -62,8 +67,8 @@ function order_indices(x)
     for (index, value) in enumerate(sort(x))
         sorted_indices[value] = index
     end
-    
-    # return the indices elements of x would have if sorted 
+
+    # return the indices elements of x would have if sorted
     return [sorted_indices[_x] for _x in x]
 
 end
@@ -85,7 +90,7 @@ function dcov_univariate(x, y)
     # 3)
     αˣ(i) = Iˣ[i] - 1
     αʸ(i) = Iʸ[i] - 1
-    
+
     βˣ(i) = s(x, i) * (Iˣ[i] - 1)
     βʸ(i) = s(y, i) * (Iʸ[i] - 1)
 
@@ -98,7 +103,7 @@ function dcov_univariate(x, y)
     # 8)
     # 9)
 
-    return 
+    return
 end
 
 function dcor(x, y)
