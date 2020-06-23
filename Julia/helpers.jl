@@ -21,13 +21,14 @@ end
 function dcov(x, y)
     A = calc_mat(x)
     B = calc_mat(y)
-    #return norm(A .* B) # Wrong, don't know why
     return sqrt(mean(A .* B))
 end
 
 function dcor(x, y)
-    println("Running dcor...")
-    return (dcov(x, y)) / (sqrt(dcov(x, x) * dcov(y, y)))
+    if length(x) > 0 && length(y) > 0
+        return (dcov(x, y)) / (sqrt(dcov(x, x) * dcov(y, y)))
+    end
+    return 0
 end
 
 # === TESTING 

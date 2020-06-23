@@ -50,6 +50,4 @@ y = rand(Uniform(0,1), 10, 1)
 #dcor = 0.9849145696875032
 # ---
 
-#@code_warntype dcor(x, y)
-#code_warntype 
-#dcor(x, y)
+@code_warntype dcor(x, y)

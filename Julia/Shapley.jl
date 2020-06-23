@@ -5,11 +5,10 @@ using Statistics
 using Random
 
 include("helpers.jl")
-#using PkgTemplates
-#generate("MyPackage", Template(;user="My Name", dir=".", dev=false))
-#Module Shapley
 
 function CF(Z, s, cf_name)
+    x = Z[:, s] #?
+    y = Z[:, size(Z)[2]] #?
 
     if cf_name=="R²"
         # Danny, how do you tell R² what's the label?
@@ -20,12 +19,8 @@ function CF(Z, s, cf_name)
         CF_value = R²(s)
     
     elseif cf_name=="dcor"
-        x = Z[:, 1:size(Z)[2]-1] #?
-        y = Z[:, size(Z)[2]] #?
-        println(size(x))
-        println(size(y))
         CF_value = dcor(x, y)
-        println(CF_value)
+        #println("dcor: ", CF_value)
 
     else
         throw(DomainError(cf_name, "not implemented"))
@@ -35,18 +30,19 @@ function CF(Z, s, cf_name)
 end
 
 function shapley(Z; vals = 1:size(Z)[2]-1, cf_name="R²")
-  d, n = size(Z)[2]-1, size(Z)[1]
+    println("hei")
+    d, n = size(Z)[2]-1, size(Z)[1]
 
-  # Equation (9) (pre-compute ω_ for efficiency)
-  ω_ = [factorial(i)/factorial(d, d-i-1) for i in 0:(d-1)]
-  ω(s) = ω_[length(s) + 1]
-  S(j) = deleteat!(collect(1:d), j)
-
-  #V(j) = sum([ω(s)*(R²(vcat(j,s)) - R²(s)) for s in powerset(S(j))])
-  V(j) = sum([ω(s)*(CF(Z, vcat(j,s), cf_name) - CF(Z, s, cf_name)) for s in powerset(S(j))])
-
-  # Calculate all the shapley values using Equation (9)
-  return map( x -> V(x), vals )
+    # Equation (9) (pre-compute ω_ for efficiency)
+    ω_ = [factorial(i)/factorial(d, d-i-1) for i in 0:(d-1)]
+    ω(s) = ω_[length(s) + 1]
+    S(j) = deleteat!(collect(1:d), j)
+    
+    V(j) = sum([ω(s)*(CF(Z, vcat(j,s), cf_name) - CF(Z, s, cf_name)) for s in powerset(S(j))])
+    
+    # Calculate all the shapley values using Equation (9)
+    #return map( x -> V(x), vals )
+    return map(V, vals)
 end
 
 
@@ -63,18 +59,15 @@ n = 10#500
 cf = "dcor"
 M0(c,d) = [Float64(c) + (i == j)*(1-Float64(c)) for i in 1:(d+1), j in 1:(d+1)]
 mvn(M) = MvNormal(M)
-Z = rand(mvn(M0(c,d)), n)'
-# what's x, what's y?
 #
-x = Z[:, 1:size(Z)[2]-1] #?
-y = Z[:, size(Z)[2]] #?
-println(size(y))
-println(y)
-println(distance_matrix(x))
-println(distance_matrix(y))
+# what's x, what's y?
+Z = rand(mvn(M0(c,d)), n)'
 
-#shap = shapley(Z, cf_name=cf)
-#println(shap)
+shap = shapley(Z, cf_name=cf)
+println(shap)
+
+cf = "R²"
+println(shapley(Z, cf_name=cf))
 
 
 
