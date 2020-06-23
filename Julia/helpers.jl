@@ -6,12 +6,15 @@ using LinearAlgebra
 
 # evaluate(Euclidean(), x, y) == sqrt(sum([z^2 for z in (x-y)])) 
 
-function distance_matrix(x, y)
-    return pairwise(Euclidean(), x, y, dims=1)
+function distance_matrix(x)
+    if isa(x, Array{Float64,1})
+        x = reshape(x, size(x)[1], 1)
+    end
+    return pairwise(Euclidean(), x, x, dims=1)
 end
 
 function calc_mat(x)
-    D = distance_matrix(x, x)
+    D = distance_matrix(x)
     return (D .- mean(D, dims=1) .- mean(D, dims=2) .+ mean(D))
 end
 
@@ -23,6 +26,7 @@ function dcov(x, y)
 end
 
 function dcor(x, y)
+    println("Running dcor...")
     return (dcov(x, y)) / (sqrt(dcov(x, x) * dcov(y, y)))
 end
 
@@ -31,8 +35,8 @@ end
 #y = rand(Uniform(0,1), 3, 3)
 
 # --- Values from python
-x = [0.828353 0.43233 0.463169; 0.397422 0.273435 0.368917; 0.483459 0.851078 0.566512]
-y = [0.208873 0.815978 0.304595; 0.485556 0.256617 0.626528; 0.769359 0.552493 0.925741]
+#x = [0.828353 0.43233 0.463169; 0.397422 0.273435 0.368917; 0.483459 0.851078 0.566512]
+#y = [0.208873 0.815978 0.304595; 0.485556 0.256617 0.626528; 0.769359 0.552493 0.925741]
 #dcov = 0.2872514947935752
 #dcor = 0.9610019939406783
 #x = [0.802453 0.903502 0.650715; 0.116538 0.781613 0.184347; 0.172204 0.0199412 0.687175]
@@ -40,10 +44,9 @@ y = [0.208873 0.815978 0.304595; 0.485556 0.256617 0.626528; 0.769359 0.552493 0
 #dcov = 0.40846505175768183
 #dcor = 0.9849145696875032
 # ---
-
-println(dcov(x, y))
-println(dcor(x, y))
-
+#println(dcov(x, y))
+#println(dcor(x, y))
+#
 function twodim(x)
     if ndims(x) == 1
         return reshape(x, (length(x), 1))
@@ -101,10 +104,6 @@ function dcov_univariate(x, y)
     return 
 end
 
-function dcor(x, y)
-
-end
-
-#x = [4, 8, 2]
-#println(order_indices(x))
-#dcov_univariate(x,x)
+##x = [4, 8, 2]
+##println(order_indices(x))
+##dcov_univariate(x,x)
