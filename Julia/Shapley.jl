@@ -4,22 +4,31 @@ using LinearAlgebra
 using Statistics
 using Random
 
+include("helpers.jl")
 #using PkgTemplates
 #generate("MyPackage", Template(;user="My Name", dir=".", dev=false))
 #Module Shapley
 
 # We need to replace R² with the distance correlation
 function CF(Z, s, cf_name)
+    if length(s) > 2
+        println(size(Z))
+        println(s)
+        println(vcat(0,s))
+        exit()
+    end
 
     if cf_name=="R²"
+        # Danny, how do you tell R² what's the label?
         Cₙ_ = cor(Z)
         Cₙ(u) = [Cₙ_[i,j] for i in u .+ 1, j in u .+ 1]
         # Equation (4) (taking care of empty s here)
-        R²(s) = (length(s) > 0) ? 1 - det(Cₙ(vcat(0,s)))/det(Cₙ(s)) : 0
+        R²(s) = (length(s) > 0) ? 1 - det(Cₙ(vcat(0,s)))/det(Cₙ(s)) : 0 # if s is empty, return 0
         CF_value = R²(s)
     
     elseif cf_name=="dcor"
         CF_value = 1
+        println(dcor())
 
     else
         throw(DomainError(cf_name, "not implemented"))
@@ -30,6 +39,9 @@ end
 
 function shapley(Z; vals = 1:size(Z)[2]-1, cf_name="R²")
   d, n = size(Z)[2]-1, size(Z)[1]
+  x = Z[:, 1:size(Z)[2]-1] #?
+  y = Z[:, size(Z)[2]] #?
+
 
   # Equation (9) (pre-compute ω_ for efficiency)
   ω_ = [factorial(i)/factorial(d, d-i-1) for i in 0:(d-1)]
@@ -52,12 +64,16 @@ end
 ### TESTING
 d = 3
 c = 0.2
-n = 500
+n = 10#500
 cf = "R²"
 #cf = "dcor"
 M0(c,d) = [Float64(c) + (i == j)*(1-Float64(c)) for i in 1:(d+1), j in 1:(d+1)]
 mvn(M) = MvNormal(M)
 Z = rand(mvn(M0(c,d)), n)'
+#
+# what's x, what's y?
+println(Z)
+
 shap = shapley(Z, cf_name=cf)
 println(shap)
 
