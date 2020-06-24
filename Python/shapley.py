@@ -25,6 +25,10 @@ CF_DICT = {
         }
 
 def calc_shapley_values(x, y, cf_name="dcor"):
+    """
+    Returns the shapley values for features x and labels y, given a
+    characteristic function (default dcor)
+    """
     players = list(range(x.shape[1]))
     shapley_values = []
     cf_dict = sh.make_cf_dict(x, y, players, cf_name=cf_name)
@@ -47,7 +51,6 @@ def calc_n_shapley_values(n_feats, n_samples, n_iter, data_type, cf_name, overwr
     all_shaps = []
     for _i in range(n_iter):
         x, y = data.make_data(n_feats, n_samples, data_type)
-        #x, y = data.make_data_random(N_FEATS, N_SAMPLES)
 
         _shapley_values = calc_shapley_values(x, y, cf_name)
         all_shaps.append(_shapley_values)
@@ -61,6 +64,10 @@ def normalise(x):
 
 
 def make_paper_violin_plot():
+    """
+    Create violin plot as it appears in the paper
+    """
+
     n_samples = 1000
     n_feats = 5
     n_iter = 1000
