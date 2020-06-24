@@ -20,7 +20,6 @@ function CF(Z, s, cf_name)
     
     elseif cf_name=="dcor"
         CF_value = dcor(x, y)
-        #println("dcor: ", CF_value)
 
     else
         throw(DomainError(cf_name, "not implemented"))
@@ -30,7 +29,6 @@ function CF(Z, s, cf_name)
 end
 
 function shapley(Z; vals = 1:size(Z)[2]-1, cf_name="R²")
-    println("hei")
     d, n = size(Z)[2]-1, size(Z)[1]
 
     # Equation (9) (pre-compute ω_ for efficiency)
@@ -46,28 +44,57 @@ function shapley(Z; vals = 1:size(Z)[2]-1, cf_name="R²")
 end
 
 
-#function 𝕮(Z)
-#end
+# === TESTING
+function test_shapley()
+    x =   [0.755635    0.345446  -0.688384
+          -1.11828    -1.68771   -0.596009
+          -2.38458    -0.121187  -0.815811
+           0.0603389   0.656752  -0.327731
+           0.826708    0.97178   -0.164207
+          -1.45166    -0.579462   1.4277  
+          -0.720464    0.60213   -0.244417
+           0.232181    0.96931    0.736506
+          -1.3447      1.12004   -1.21429 
+          -0.405403   -0.562174   0.581327]
+    y = [  0.23258329322511723
+           0.2833107386114472 
+          -1.2564352832581345 
+          -0.5874108883625386 
+          -0.9447399412637602 
+          -0.23829487490839948
+          -1.5497635035663024 
+           0.7354636701191419 
+           2.0315107752106654 
+           1.6625315369928169]
+    z = hcat(x, y)
+    # Compare to values from python
+    cf = "dcor"
+    dcor_sunnies_python = [0.13270700386803647, 0.16079441322043492, 0.21536146625667366]
+    @assert (map(x -> round(x, digits=6), shapley(z, cf_name=cf)) == map(x -> round(x, digits=6), dcor_sunnies_python))
 
-#end
+    cf = "R²"
+    println(shapley(z, cf_name=cf))
+    #r2_sunnies_python = [0.0028289722726558275, 0.002378728006757924, 0.0001955632692127729]
+    #@assert (map(x -> round(x, digits=6), shapley(z, cf_name=cf)) == map(x -> round(x, digits=6), r2_sunnies_python))
 
-### TESTING
-d = 3
-c = 0.2
-n = 10#500
+end
+test_shapley()
+#d = 3
+#c = 0.2
+#n = 10#500
 #cf = "R²"
-cf = "dcor"
-M0(c,d) = [Float64(c) + (i == j)*(1-Float64(c)) for i in 1:(d+1), j in 1:(d+1)]
-mvn(M) = MvNormal(M)
+#cf = "dcor"
+#M0(c,d) = [Float64(c) + (i == j)*(1-Float64(c)) for i in 1:(d+1), j in 1:(d+1)]
+#mvn(M) = MvNormal(M)
+##
+## what's x, what's y?
+#Z = rand(mvn(M0(c,d)), n)'
 #
-# what's x, what's y?
-Z = rand(mvn(M0(c,d)), n)'
-
-shap = shapley(Z, cf_name=cf)
-println(shap)
-
-cf = "R²"
-println(shapley(Z, cf_name=cf))
+#shap = shapley(Z, cf_name=cf)
+#println(shap)
+#
+#cf = "R²"
+#println(shapley(Z, cf_name=cf))
 
 
 
