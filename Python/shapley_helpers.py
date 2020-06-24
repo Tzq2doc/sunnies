@@ -37,10 +37,10 @@ def CF(x, y, team, cf_name):
     if len(team)==0:
         return 0.0
 
-    if cf_name is "dcor":
+    if cf_name.lower() is "dcor":
         return dcor.distance_correlation(y, x)
 
-    elif cf_name is "r2":
+    elif cf_name.lower() is "r2":
         det_C_xy = numpy.linalg.det(numpy.corrcoef(x.T, y))
         if len(team)==1:
             det_C_x = 1
@@ -48,11 +48,11 @@ def CF(x, y, team, cf_name):
             det_C_x = numpy.linalg.det(numpy.corrcoef(x.T))
         return (1 - det_C_xy/det_C_x)
 
-    elif cf_name is "aidc":
+    elif cf_name.lower() is "aidc":
         return dcor.distance_correlation_af_inv(y, x)
         #return AIDC(x, y)
 
-    elif cf_name is "hsic":
+    elif cf_name.lower() is "hsic":
         return dHSIC(x, y)
 
     else:
