@@ -42,8 +42,8 @@ y_pred = model.predict(X_test)
 # --- Feature importances
 feature_importance = model.feature_importances_
 
-shapley_values_actual = shapley.calc_shapley_values(X_test, y_test, list(range(D)), "dcor")
-shapley_values_xgb = shapley.calc_shapley_values(X_test, y_pred, list(range(D)), "dcor")
+shapley_values_actual = shapley.calc_shapley_values(X_test, y_test, "dcor")
+shapley_values_xgb = shapley.calc_shapley_values(X_test, y_pred, "dcor")
 
 print(shapley_values_actual)
 print(shapley_values_xgb)

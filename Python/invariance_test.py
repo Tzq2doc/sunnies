@@ -26,7 +26,6 @@ print("Distance correlation:")
 print(dcor.distance_correlation(Y, X))
 print("Unbiased dcor:")
 print(numpy.sqrt(dcor.u_distance_correlation_sqr(Y, X)))
-sys.exit()
 
 #for _ in range(10000):
 #    AIDC(X, Y)

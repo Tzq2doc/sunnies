@@ -82,7 +82,8 @@ def make_cf_dict(x, y, players, cf_name):
 def calc_shap(x, y, v, cf_dict):
     """
     Calculate the Shapley value for player indexed v,
-    given x (todo explain) and the caracteristic function cf (todo explain)
+    given features x and labels/targets y, using as
+    caracteristic function the pre-computed values in cf_dict.
     """
     players = list(range(x.shape[1]))
 
@@ -107,5 +108,5 @@ def calc_shap(x, y, v, cf_dict):
         average_value_s = value_s/len(teams_of_size_s)
         value += average_value_s
     average_value = value/len(team_sizes)
-    return average_value
 
+    return average_value

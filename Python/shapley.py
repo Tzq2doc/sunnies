@@ -24,32 +24,32 @@ CF_DICT = {
         "xgb" : "XGBoost Regressor",
         }
 
-def calc_shapley_values(x, y, players, cf_name="dcor"):
+def calc_shapley_values(x, y, cf_name="dcor"):
+    players = list(range(x.shape[1]))
     shapley_values = []
     cf_dict = sh.make_cf_dict(x, y, players, cf_name=cf_name)
     for _player in players:
         shapley_values.append(sh.calc_shap(x, y, _player, cf_dict))
     return shapley_values
 
-def calc_n_shapley_values(n_iter, cf_name, overwrite=False):
+def calc_n_shapley_values(n_feats, n_samples, n_iter, data_type, cf_name, overwrite=False, data_dir="result_data_sunnies"):
     """
     Returns a nested list of shapley values (per player) per iteration;
     [[v1... vn], [v1...vn], [v1...vn], ...]
     I.e. the length of the list is equal to n_iter
     """
-    global N_FEATS, N_SAMPLES, PLAYERS
+    players = list(range(n_feats))
 
-    filename = "{0}/{1}_feats_{2}_samples_{3}_iter_{4}.npy".format(DATA_DIR,
-            N_FEATS, N_SAMPLES, N_ITER, cf_name)
+    filename = f"{data_dir}/{n_feats}_feats_{n_samples}_samples_{n_iter}_iter_{cf_name}.npy"
     if not overwrite and os.path.exists(filename):
         return numpy.load(filename)
 
     all_shaps = []
     for _i in range(n_iter):
-        x, y = data.make_data(N_FEATS, N_SAMPLES, DATA_TYPE)
+        x, y = data.make_data(n_feats, n_samples, data_type)
         #x, y = data.make_data_random(N_FEATS, N_SAMPLES)
 
-        _shapley_values = calc_shapley_values(x, y, PLAYERS, cf_name)
+        _shapley_values = calc_shapley_values(x, y, cf_name)
         all_shaps.append(_shapley_values)
 
     numpy.save(filename, all_shaps)
@@ -60,7 +60,36 @@ def normalise(x):
     return (x - numpy.mean(x))/(numpy.std(x))
 
 
+def make_paper_violin_plot():
+    n_samples = 1000
+    n_feats = 5
+    n_iter = 1000
+    players = list(range(n_feats))
+    data_type = "random"
+    data_dir = os.path.join("result_data", "{0}".format(data_type))
+    if not os.path.isdir(data_dir):
+        os.makedirs(data_dir)
+
+    # --- Plot shapley decompositions for all cfs per player
+    cfs = ["r2", "hsic", "dcor", "aidc"]
+    all_cf_shaps_per_player = []
+    for _cf in cfs:
+        _all_player_shaps = []
+        _cf_shaps = calc_n_shapley_values(n_feats, n_samples, n_iter,
+                data_type, _cf, overwrite=False, data_dir=data_dir)
+
+        # --- Group shapley decompositions per player. Normalised.
+        all_cf_shaps_per_player.append([normalise(numpy.array(_cf_shaps))[:,_player] for _player in players])
+        print("Done with {0}.".format(_cf))
+    # ---
+
+    cf_labels = [CF_DICT.get(_cf, 0) for _cf in cfs]
+    violinplot(all_cf_shaps_per_player, players, labels=cf_labels, multi=True)
+
+
 if __name__ == "__main__":
+
+    make_paper_violin_plot()
 
     #CF_NAME = "hsic"
     #CF_NAME = "dcor"
@@ -68,18 +97,18 @@ if __name__ == "__main__":
     #CF_NAME = "aidc"
     #CF_NAME = "xgb"
 
-    N_SAMPLES = 1000
+    N_SAMPLES = 100#1000
     N_FEATS = 2#5
-    N_ITER = 1000
+    N_ITER = 100#1000
     PLAYERS = list(range(N_FEATS))
 
 
     # --- Pick one data generating process
     #DATA_TYPE = "step" #ok
-    #DATA_TYPE = "random" #ok
+    DATA_TYPE = "random" #ok
     #DATA_TYPE = "harmonic" #ok
     #DATA_TYPE = "xor_discrete" #ok
-    DATA_TYPE = "xor_discrete_discrete" #ok
+    #DATA_TYPE = "xor_discrete_discrete" #ok
     # ---
 
     DATA_DIR = os.path.join("result_data", "{0}".format(DATA_TYPE))
@@ -87,7 +116,7 @@ if __name__ == "__main__":
         os.makedirs(DATA_DIR)
 
     # --- Plot shapley decomposition per player for one cf:
-    #all_shaps = calc_n_shapley_values(N_ITER, CF_NAME)
+    #all_shaps = calc_n_shapley_values(N_FEATS, N_SAMPLES, N_ITER, DATA_TYPE, CF_NAME, data_dir=DATA_DIR)
     # --- Non-normalised:
     #shaps_per_player = [numpy.array(all_shaps)[:,_player] for _player in PLAYERS]
     #violinplot(shaps_per_player, PLAYERS, multi=False)
@@ -103,10 +132,12 @@ if __name__ == "__main__":
 
     # --- Plot shapley decompositions for all cfs per player
     cfs = ["r2", "hsic", "dcor", "aidc"]
+    cfs = ["hsic", "dcor", "aidc"]
     all_cf_shaps_per_player = []
     for _cf in cfs:
         _all_player_shaps = []
-        _cf_shaps = calc_n_shapley_values(N_ITER, _cf)
+        _cf_shaps = calc_n_shapley_values(N_FEATS, N_SAMPLES, N_ITER,
+                DATA_TYPE, _cf, data_dir=DATA_DIR)
 
         # --- Group shapley decompositions per player
         # --- Normalised:

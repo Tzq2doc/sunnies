@@ -54,8 +54,8 @@ def normalise(x):
 
 def display_shapley_vs_xgb(X_test, y_test, y_pred, cf="dcor"):
     d = X_test.shape[1]
-    shapley_values_actual = shapley.calc_shapley_values(X_test, y_test, list(range(d)), cf)
-    shapley_values_xgb = shapley.calc_shapley_values(X_test, y_pred, list(range(d)), cf)
+    shapley_values_actual = shapley.calc_shapley_values(X_test, y_test, cf)
+    shapley_values_xgb = shapley.calc_shapley_values(X_test, y_pred, cf)
 
     _, ax = plt.subplots()
     ax = nice_axes(ax)
@@ -68,7 +68,7 @@ def display_shapley_vs_xgb(X_test, y_test, y_pred, cf="dcor"):
     plt.legend()
     plt.draw()
 
-def display_shapley(X_train, y_train, cf=["dcor"]):
+def display_shapley(X_train, y_train, cf=["dcor"], xlabels=None):
     if not isinstance(cf, list):
         cf = list(cf)
 
@@ -82,16 +82,22 @@ def display_shapley(X_train, y_train, cf=["dcor"]):
 
     for _n, _cf in enumerate(cf):
         print(_cf)
-        _shapley_values = shapley.calc_shapley_values(X_train, y_train,
-                x_range, _cf)
+        _shapley_values = shapley.calc_shapley_values(X_train, y_train, _cf)
         #_shapley_values = normalise(_shapley_values)
 
         plt.bar(x_range + 0.1*_n*numpy.ones(d), _shapley_values, alpha=0.5,
                 label=_cf, width=0.1)
 
+
+        #if _n < 1:
+            #_shapley_values, xlabels = [list(t) for t in zip(*sorted(zip(_shapley_values, xlabels), reverse=True))]
+
+    if xlabels is None:
+        x_labels = x_range
+
+    ax.set_xticks(x_range)
+    ax.set_xticklabels(xlabels, rotation=90)
     plt.title(r"Shapley decomposition of {0} on training data".format(cf))
-    #plt.bar(range(len(shapley_values_actual)), shapley_values_actual, color="red",
-    #        alpha=0.5, label="True")
     plt.legend()
     plt.draw()
 
@@ -141,7 +147,7 @@ def display_feature_importances(model):
 
 def display_residuals_shapley(x, residuals, cf="dcor"):
     d = x.shape[1]
-    shapley_values_residuals = shapley.calc_shapley_values(x, residuals, list(range(d)), cf)
+    shapley_values_residuals = shapley.calc_shapley_values(x, residuals, cf)
 
     _, ax = plt.subplots()
     ax = shapley.nice_axes(ax)
