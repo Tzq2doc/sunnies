@@ -29,4 +29,4 @@ y = [
   1.6625315369928169 ]
 
 print(calc_shapley_values(np.array(x), np.array(y), cf_name="r2"))
-print(calc_shapley_values(np.array(x), np.array(y), cf_name="dcor"))
+#print(calc_shapley_values(np.array(x), np.array(y), cf_name="dcor"))
