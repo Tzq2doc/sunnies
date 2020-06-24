@@ -31,23 +31,6 @@ function dcor(x, y)
     return 0
 end
 
-# === TESTING 
-#x = rand(Uniform(0,1), 3, 3)
-#y = rand(Uniform(0,1), 3, 3)
-
-# --- Values from python
-#x = [0.828353 0.43233 0.463169; 0.397422 0.273435 0.368917; 0.483459 0.851078 0.566512]
-#y = [0.208873 0.815978 0.304595; 0.485556 0.256617 0.626528; 0.769359 0.552493 0.925741]
-#dcov = 0.2872514947935752
-#dcor = 0.9610019939406783
-#x = [0.802453 0.903502 0.650715; 0.116538 0.781613 0.184347; 0.172204 0.0199412 0.687175]
-#y = [0.0180497 0.259578 0.464613; 0.211949 0.278084 0.96341; 0.701463 0.740318 0.319947]
-#dcov = 0.40846505175768183
-#dcor = 0.9849145696875032
-# ---
-#println(dcov(x, y))
-#println(dcor(x, y))
-#
 function twodim(x)
     if ndims(x) == 1
         return reshape(x, (length(x), 1))
@@ -105,6 +88,45 @@ function dcov_univariate(x, y)
     return 
 end
 
-##x = [4, 8, 2]
-##println(order_indices(x))
-##dcov_univariate(x,x)
+function test_order_indices()
+    x = [4, 8, 2]
+    @assert order_indices(x) == [2, 3, 1]
+end
+
+# === Test functions
+function test_dcov()
+    # Values from python
+    x = [0.828353 0.43233 0.463169; 0.397422 0.273435 0.368917; 0.483459 0.851078 0.566512]
+    y = [0.208873 0.815978 0.304595; 0.485556 0.256617 0.626528; 0.769359 0.552493 0.925741]
+    dcov_true = 0.2872514947935752
+
+    @assert round(dcov_true, digits=8) == round(dcov(x, y), digits=8)
+
+    x = [0.802453 0.903502 0.650715; 0.116538 0.781613 0.184347; 0.172204 0.0199412 0.687175]
+    y = [0.0180497 0.259578 0.464613; 0.211949 0.278084 0.96341; 0.701463 0.740318 0.319947]
+    dcov_true = 0.40846505175768183
+    
+    @assert round(dcov_true, digits=8) == round(dcov(x, y), digits=8)
+end
+
+function test_dcor()
+    # Values from python
+    x = [0.828353 0.43233 0.463169; 0.397422 0.273435 0.368917; 0.483459 0.851078 0.566512]
+    y = [0.208873 0.815978 0.304595; 0.485556 0.256617 0.626528; 0.769359 0.552493 0.925741]
+    dcor_true = 0.9610019939406783
+
+    @assert round(dcor_true, digits=8) == round(dcor(x, y), digits=8)
+
+    x = [0.802453 0.903502 0.650715; 0.116538 0.781613 0.184347; 0.172204 0.0199412 0.687175]
+    y = [0.0180497 0.259578 0.464613; 0.211949 0.278084 0.96341; 0.701463 0.740318 0.319947]
+    dcor_true = 0.9849145696875032
+    
+    @assert round(dcor_true, digits=8) == round(dcor(x, y), digits=8)
+end
+
+# === TESTING 
+#dcov_univariate(x,x)
+
+#x = rand(Uniform(0,1), 3, 3)
+#y = rand(Uniform(0,1), 3, 3)
+    
