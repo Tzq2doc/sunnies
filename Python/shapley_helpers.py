@@ -37,22 +37,29 @@ def CF(x, y, team, cf_name):
     if len(team)==0:
         return 0.0
 
-    if cf_name.lower() is "dcor":
+    if cf_name.lower() == "dcor":
         return dcor.distance_correlation(y, x)
 
-    elif cf_name.lower() is "r2":
+    elif cf_name.lower() == "r2":
         det_C_xy = numpy.linalg.det(numpy.corrcoef(x.T, y))
         if len(team)==1:
             det_C_x = 1
         else:
             det_C_x = numpy.linalg.det(numpy.corrcoef(x.T))
+
+        # ------------------------------------
+        # FOr debugging R2 in Julia
+        #print(f"team={team}")
+        #print(1 - det_C_xy/det_C_x)
+        # ------------------------------------
+
         return (1 - det_C_xy/det_C_x)
 
-    elif cf_name.lower() is "aidc":
+    elif cf_name.lower() == "aidc":
         return dcor.distance_correlation_af_inv(y, x)
         #return AIDC(x, y)
 
-    elif cf_name.lower() is "hsic":
+    elif cf_name.lower() == "hsic":
         return dHSIC(x, y)
 
     else:
