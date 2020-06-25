@@ -32,6 +32,9 @@ function dcor(x, y)
 end
 
 function aidc(x, y)
+    if length(x) == 0
+        return 0
+    end
     cov_y = cov(y)
     cov_x = cov(x) # NB! This is cov(x.T) in python
 
@@ -46,7 +49,7 @@ function aidc(x, y)
         if sqrt_inv_cov_x isa Array{Complex{Float64},2}
             x_trans = x * convert(Array{Float64,2}, sqrt_inv_cov_x)
         else
-            x_trans = x * sqrt(inv_cov_x)
+            x_trans = x * sqrt_inv_cov_x
         end
     end
 
@@ -203,7 +206,7 @@ function test_aidc()
     @assert round(aidc(x1, y1), digits=8) == round(aidc_python1, digits=8)
     println("AIDC function ok!")
 end
-test_aidc()
+#test_aidc()
 
 # === TESTING 
 #dcov_univariate(x,x)

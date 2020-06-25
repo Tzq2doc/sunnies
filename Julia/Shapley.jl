@@ -29,6 +29,9 @@ function CF(z, s, cf_name)
     elseif cf_name=="dcor"
         return dcor(x, y)
 
+    elseif cf_name=="aidc"
+        return aidc(x, y)
+
     else
         throw(DomainError(cf_name, "not implemented"))
     end
@@ -99,7 +102,7 @@ function test_cf_dict()
     cf_dict = make_cf_dict(z, players, cf_name)
     println(cf_dict)
 end
-test_cf_dict()
+#test_cf_dict()
 
 function test_shapley()
     x =   [0.755635    0.345446  -0.688384
@@ -123,19 +126,35 @@ function test_shapley()
            2.0315107752106654 
            1.6625315369928169]
     z = hcat(x, y)
-    # Compare to values from python
+    # --- Compare to values from python
+
+    println("Checking DCOR...")
     cf = "dcor"
     println(shapley(z, cf_name=cf))
-    #dcor_sunnies_python = [0.13270700386803647, 0.16079441322043492, 0.21536146625667366]
-    #@assert (map(x -> round(x, digits=6), shapley(z, cf_name=cf)) == map(x -> round(x, digits=6), dcor_sunnies_python))
+    dcor_sunnies_python = [0.13270700386803647, 0.16079441322043492, 0.21536146625667366]
+    @assert (map(x -> round(x, digits=6), shapley(z, cf_name=cf)) == map(x -> round(x, digits=6),
+                                                                         dcor_sunnies_python))
+    println("DCOR Shapley ok")
 
-    #cf = "R²"
-    #println(shapley(z, cf_name=cf))
-    #r2_sunnies_python = [0.0028289722726558275, 0.002378728006757924, 0.0001955632692127729]
-    #@assert (map(x -> round(x, digits=6), shapley(z, cf_name=cf)) == map(x -> round(x, digits=6), r2_sunnies_python))
+
+    println("Checking AIDC...")
+    cf = "aidc"
+    println(shapley(z, cf_name=cf))
+    aidc_sunnies_python = [0.15814797961344823, 0.17784284010634102, 0.21268112762878846]
+    @assert (map(x -> round(x, digits=6), shapley(z, cf_name=cf)) == map(x -> round(x, digits=6),
+                                                                         aidc_sunnies_python))
+    println("AIDC Shapley ok")
+
+    println("Checking R²...")
+    cf = "R²"
+    println(shapley(z, cf_name=cf))
+    r2_sunnies_python = [0.0028289722726558275, 0.002378728006757924, 0.0001955632692127729]
+    @assert (map(x -> round(x, digits=6), shapley(z, cf_name=cf)) == map(x -> round(x, digits=6), 
+                                                                         r2_sunnies_python))
+    println("R² Shapley ok")
 
 end
-#test_shapley()
+test_shapley()
 
 #d = 3
 #c = 0.2

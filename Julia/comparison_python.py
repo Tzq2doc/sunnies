@@ -1,10 +1,12 @@
 import sys
 import numpy as np
+import scipy.linalg
+import dcor
 
 sys.path.insert(0, "../Python")
 from shapley import calc_shapley_values
 
-x = [
+x = np.array([
  [ 0.755635 ,   0.345446 , -0.688384],
  [-1.11828  ,  -1.68771  , -0.596009],
  [-2.38458  ,  -0.121187 , -0.815811],
@@ -14,9 +16,9 @@ x = [
  [-0.720464 ,   0.60213  , -0.244417],
  [ 0.232181 ,   0.96931  ,  0.736506],
  [-1.3447   ,   1.12004  , -1.21429 ],
- [-0.405403 ,  -0.562174 ,  0.581327]]
+ [-0.405403 ,  -0.562174 ,  0.581327]])
 
-y = [
+y = np.array([
   0.23258329322511723,
   0.2833107386114472 ,
  -1.2564352832581345 ,
@@ -26,7 +28,52 @@ y = [
  -1.5497635035663024 ,
   0.7354636701191419 ,
   2.0315107752106654 ,
-  1.6625315369928169 ]
+  1.6625315369928169 ])
 
-print(calc_shapley_values(np.array(x), np.array(y), cf_name="r2"))
+x1 = np.array([
+       [-0.341371  , -0.133888 , -1.26302  , -0.467231  ,  0.644707],
+       [-0.0524715 , -0.829657 ,  0.600282 ,  0.78509   ,  1.49509 ],
+       [ 0.081209  , -1.60534  , -0.467177 , -0.715523  , -1.31282 ],
+       [ 0.597182  ,  1.67758  , -0.149649 ,  0.198237  ,  3.2101  ],
+       [-0.782839  ,  1.24472  , -0.537776 , -0.774976  ,  0.611209],
+       [-0.942106  ,  1.4796   ,  0.327017 ,  1.66083   , -0.0437138],
+       [ 0.674375  , -1.82007  ,  0.314038 , -0.0269082 ,  0.13076 ],
+       [ 0.120167  , -0.495699 ,  2.79102  , -0.0135147 , -0.80674 ],
+       [-1.3133    , -0.678867 , -0.125036 ,  0.450812  , -0.550585],
+       [-0.358026  ,  0.763886 , -0.642018 , -1.53592   ,  0.910746]
+     ])
+y1 = np.array([
+     0.31699426810558795,
+     1.34181444337193   ,
+    -0.508878033643789  ,
+     2.6854023615295426 ,
+    -0.7195432425919883 ,
+     0.4681875927260907 ,
+     0.027206421899317337,
+     0.6396687066390925  ,
+     0.203168750153398   ,
+    -1.0873217125552856])
+
+def aidc(x, y):
+    cov_y = np.cov(y)
+    cov_x = np.cov(x.T)
+
+    if cov_x.shape is ():
+        inv_cov_x = 1.0/cov_x
+        x_trans = np.dot(x, np.sqrt(inv_cov_x))
+    else:
+        inv_cov_x = np.linalg.inv(cov_x)
+        x_trans = np.dot(x, scipy.linalg.sqrtm(inv_cov_x))
+    inv_cov_y = 1/cov_y
+    y_trans = np.dot(y, np.sqrt(inv_cov_y))
+    return dcor.distance_correlation(x_trans, y_trans)
+
+#print(aidc(x, y))
+#print(aidc(x1, y1))
+
+#print(dcor.distance_correlation_af_inv(x, y))
+#print(dcor.distance_correlation_af_inv(x1, y1))
+
+#print(calc_shapley_values(np.array(x), np.array(y), cf_name="r2"))
 #print(calc_shapley_values(np.array(x), np.array(y), cf_name="dcor"))
+print(calc_shapley_values(np.array(x), np.array(y), cf_name="aidc"))
